@@ -18,14 +18,30 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Find gradlew
+        run: |
+          ls -R
+          find . -name "gradlew" -type f
+
+      - name: Grant execute permission
+        run: |
+          if [ -f "./gradlew" ]; then chmod +x ./gradlew; fi
+          if [ -f "./app/gradlew" ]; then chmod +x ./app/gradlew; fi
+          if [ -f "./android/gradlew" ]; then chmod +x ./android/gradlew; fi
 
       - name: Build APK Release
-        run: ./gradlew assembleRelease --stacktrace
+        run: |
+          if [ -f "./gradlew" ]; then ./gradlew assembleRelease; 
+          elif [ -f "./app/gradlew" ]; then cd app && ./gradlew assembleRelease;
+          elif [ -f "./android/gradlew" ]; then cd android && ./gradlew assembleRelease;
+          else echo "gradlew not found" && exit 1; fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ProdSuivi-PRO-V3
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          name: ProdSuivi-PRO-V3-Dianamavie
+          path: |
+            app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/release/*.apk
+            build/outputs/apk/release/*.apk
+            **/app-release*.apk
