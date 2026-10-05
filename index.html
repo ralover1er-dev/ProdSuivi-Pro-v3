@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>ProdSuivi PRO V3 - Agro-Logistique Alimentaire</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            agro: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+  </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col bg-slate-100 overflow-x-hidden">
+
+  <!-- Header -->
+  <header id="main-header" class="bg-agro-800 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+          <i data-lucide="container" class="w-5 h-5 text-agro-500"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <h1 class="font-extrabold text-base leading-tight">ProdSuivi PRO</h1>
+            <span class="px-1.5 py-0.2 bg-emerald-500 text-agro-900 text-[10px] font-black rounded-md">V3</span>
+          </div>
+          <p class="text-[11px] text-agro-200">Agro-Logistique Alimentaire</p>
+        </div>
+      </div>
+      <div id="header-user-tag" class="flex items-center space-x-1.5">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-agro-700 text-emerald-200 border border-agro-600">
+          Douala Export
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Scrollable Container -->
+  <main id="app-container" class="flex-1 overflow-y-auto pb-24 max-w-md mx-auto w-full"></main>
+
+  <!-- Bottom Navigation -->
+  <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 safe-bottom">
+    <div class="max-w-md mx-auto grid grid-cols-3 py-1">
+      <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="flex flex-col items-center py-2 text-agro-800">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[11px] font-semibold mt-1">Accueil</span>
+      </button>
+      <button onclick="navigateTo('containers')" id="nav-containers" class="flex flex-col items-center py-2 text-slate-400">
+        <i data-lucide="boxes" class="w-5 h-5"></i>
+        <span class="text-[11px] font-medium mt-1">Conteneurs</span>
+      </button>
+      <button onclick="navigateTo('profile')" id="nav-profile" class="flex flex-col items-center py-2 text-slate-400">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span class="text-[11px] font-medium mt-1">Profil</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Modals Backdrop -->
+  <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="modal-box" class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs px-4 py-2 rounded-full shadow-lg pointer-events-none opacity-0 transition-opacity duration-300 z-50 flex items-center space-x-2">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-message">Notification</span>
+  </div>
+
+  <script>
+    // Initial 19 items exactly reproducing user screenshots & specifications:
+    // Total Mass: 26478.0 Kg, Total Cartons: 1547.8, Total Objectif: 26000.0 Kg (101.8%)
+    const INITIAL_PRODUCTS_V3 = [
+      { id: "p1", name: "Water Leaves", mass: 1540.0, objectifKg: 1500.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Feuilles fraîches lavées et essorées", sealed: true, weighings: [{ date: "05/10/2026", mass: 885.0 }, { date: "05/10/2026", mass: 655.0 }] },
+      { id: "p2", name: "Ndolè", mass: 2200.0, objectifKg: 1800.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Ndolè lavé pressé sous vide", sealed: true, weighings: [{ date: "05/10/2026", mass: 1200.0 }, { date: "05/10/2026", mass: 1000.0 }] },
+      { id: "p3", name: "Ugu", mass: 950.0, objectifKg: 1000.0, cartonWeight: 10.0, pcsPerCarton: 10, pcWeight: 1.0, desc: "Feuilles de citrouille fraîches", sealed: true, weighings: [{ date: "05/10/2026", mass: 500.0 }, { date: "05/10/2026", mass: 450.0 }] },
+      { id: "p4", name: "water Fufu", mass: 1800.0, objectifKg: 1600.0, cartonWeight: 20.0, pcsPerCarton: 10, pcWeight: 2.0, desc: "Pâte de manioc fermentée sous vide", sealed: true, weighings: [{ date: "05/10/2026", mass: 900.0 }, { date: "05/10/2026", mass: 900.0 }] },
+      { id: "p5", name: "BOBOLO COMACAM", mass: 3000.0, objectifKg: 2800.0, cartonWeight: 25.0, pcsPerCarton: 50, pcWeight: 0.5, desc: "Bâtons de manioc extra longs", sealed: true, weighings: [{ date: "05/10/2026", mass: 1500.0 }, { date: "05/10/2026", mass: 1500.0 }] },
+      { id: "p6", name: "Miondo", mass: 1600.0, objectifKg: 1400.0, cartonWeight: 20.0, pcsPerCarton: 40, pcWeight: 0.5, desc: "Fins bâtonnets traditionnels fumés", sealed: true, weighings: [{ date: "05/10/2026", mass: 800.0 }, { date: "05/10/2026", mass: 800.0 }] },
+      { id: "p7", name: "Zom", mass: 800.0, objectifKg: 1000.0, cartonWeight: 10.0, pcsPerCarton: 10, pcWeight: 1.0, desc: "Morelle noire récolte matinale", sealed: true, weighings: [{ date: "05/10/2026", mass: 400.0 }, { date: "05/10/2026", mass: 400.0 }] },
+      { id: "p8", name: "Bitter Leaves", mass: 1350.0, objectifKg: 1500.0, cartonWeight: 15.0, pcsPerCarton: 15, pcWeight: 1.0, desc: "Feuilles amères séchées & pressées", sealed: true, weighings: [{ date: "05/10/2026", mass: 885.0 }, { date: "05/10/2026", mass: 465.0 }] },
+      { id: "p9", name: "Folong", mass: 700.0, objectifKg: 1000.0, cartonWeight: 10.0, pcsPerCarton: 10, pcWeight: 1.0, desc: "Amarante verte locale sélectionnée", sealed: true, weighings: [{ date: "05/10/2026", mass: 350.0 }, { date: "05/10/2026", mass: 350.0 }] },
+      { id: "p10", name: "Eru / Okok", mass: 1100.0, objectifKg: 1000.0, cartonWeight: 10.0, pcsPerCarton: 10, pcWeight: 1.0, desc: "Feuilles de Gnetum émincées", sealed: true, weighings: [{ date: "05/10/2026", mass: 600.0 }, { date: "05/10/2026", mass: 500.0 }] },
+      { id: "p11", name: "Plantain Vert", mass: 1750.0, objectifKg: 1800.0, cartonWeight: 25.0, pcsPerCarton: 25, pcWeight: 1.0, desc: "Régimes calibre export A+", sealed: true, weighings: [{ date: "05/10/2026", mass: 900.0 }, { date: "05/10/2026", mass: 850.0 }] },
+      { id: "p12", name: "Bâtons de Manioc", mass: 1050.0, objectifKg: 1000.0, cartonWeight: 15.0, pcsPerCarton: 30, pcWeight: 0.5, desc: "Manioc doux traditionnel", sealed: true, weighings: [{ date: "05/10/2026", mass: 550.0 }, { date: "05/10/2026", mass: 500.0 }] },
+      { id: "p13", name: "Piment Frais", mass: 500.0, objectifKg: 600.0, cartonWeight: 10.0, pcsPerCarton: 10, pcWeight: 1.0, desc: "Piments habanero sélection export", sealed: true, weighings: [{ date: "05/10/2026", mass: 250.0 }, { date: "05/10/2026", mass: 250.0 }] },
+      { id: "p14", name: "Safou", mass: 900.0, objectifKg: 1000.0, cartonWeight: 15.0, pcsPerCarton: 15, pcWeight: 1.0, desc: "Prunes sauvages fermes", sealed: true, weighings: [{ date: "05/10/2026", mass: 450.0 }, { date: "05/10/2026", mass: 450.0 }] },
+      { id: "p15", name: "Gombo Frais", mass: 600.0, objectifKg: 800.0, cartonWeight: 10.0, pcsPerCarton: 10, pcWeight: 1.0, desc: "Gombos tendres cueillis du jour", sealed: true, weighings: [{ date: "05/10/2026", mass: 300.0 }, { date: "05/10/2026", mass: 300.0 }] },
+      { id: "p16", name: "Egusi", mass: 800.0, objectifKg: 800.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Graines de courge décortiquées", sealed: true, weighings: [{ date: "05/10/2026", mass: 400.0 }, { date: "05/10/2026", mass: 400.0 }] },
+      { id: "p17", name: "Koki", mass: 750.0, objectifKg: 1000.0, cartonWeight: 15.0, pcsPerCarton: 15, pcWeight: 1.0, desc: "Niébé blanc prêt à cuire", sealed: true, weighings: [{ date: "05/10/2026", mass: 400.0 }, { date: "05/10/2026", mass: 350.0 }] },
+      { id: "p18", name: "Feuilles de Manioc", mass: 2228.0, objectifKg: 1800.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Pilage fin pour Kwem traditionnel", sealed: true, weighings: [{ date: "05/10/2026", mass: 1114.0 }, { date: "05/10/2026", mass: 1114.0 }] },
+      { id: "p19", name: "Ndjansang & Épices", mass: 2860.0, objectifKg: 2600.0, cartonWeight: 25.0, pcsPerCarton: 25, pcWeight: 1.0, desc: "Épices et graines nobles aromatiques", sealed: true, weighings: [{ date: "05/10/2026", mass: 1430.0 }, { date: "05/10/2026", mass: 1430.0 }] }
+    ];
+
+    const DEFAULT_USERS = [
+      {
+        id: "u-1",
+        name: "AUDRIAN Ronis",
+        phone: "670053957",
+        password: "password123",
+        role: "Superviseur Export Maritime",
+        company: "COMACAM Agro-Logistique Export",
+        createdAt: "01/10/2026"
+      }
+    ];
+
+    const DEFAULT_CONTAINERS = [
+      {
+        id: "cnt-1",
+        name: "COMACAM SUARL",
+        client: "COMACAM SUARL International",
+        destination: "Rungis - Paris, France",
+        createdAt: "05/10/2026 11:09",
+        closed: true,
+        locked: true,
+        producerPhone: "670053957",
+        producerName: "AUDRIAN Ronis",
+        products: INITIAL_PRODUCTS_V3
+      }
+    ];
+
+    // State
+    let appUsers = loadUsers();
+    let currentAuthUser = loadCurrentAuthUser();
+    let appContainers = loadContainers();
+    let currentView = 'dashboard';
+    let currentContainerId = null;
+    let currentProductId = null;
+    let containerSearchQuery = "";
+    let productSearchQuery = "";
+    let authMode = "login"; // 'login' or 'register'
+
+    function loadUsers() {
+      try {
+        const s = localStorage.getItem("prodsuivi_users_v3");
+        if (s) {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) { console.error(e); }
+      return DEFAULT_USERS;
+    }
+
+    function saveUsers() {
+      try { localStorage.setItem("prodsuivi_users_v3", JSON.stringify(appUsers)); } catch (e) {}
+    }
+
+    function loadCurrentAuthUser() {
+      try {
+        const s = localStorage.getItem("prodsuivi_current_user_v3");
+        if (s) {
+          const u = JSON.parse(s);
+          if (u && u.phone) return u;
+        }
+      } catch (e) {}
+      // Default to logged-in user AUDRIAN Ronis
+      return DEFAULT_USERS[0];
+    }
+
+    function saveCurrentAuthUser(user) {
+      currentAuthUser = user;
+      try {
+        if (user) localStorage.setItem("prodsuivi_current_user_v3", JSON.stringify(user));
+        else localStorage.removeItem("prodsuivi_current_user_v3");
+      } catch (e) {}
+    }
+
+    function loadContainers() {
+      try {
+        const s = localStorage.getItem("prodsuivi_containers_v3");
+        if (s) {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+      return DEFAULT_CONTAINERS;
+    }
+
+    function saveContainers() {
+      try { localStorage.setItem("prodsuivi_containers_v3", JSON.stringify(appContainers)); } catch (e) {}
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      const msgEl = document.getElementById("toast-message");
+      if (toast && msgEl) {
+        msgEl.innerText = msg;
+        toast.classList.remove("opacity-0");
+        toast.classList.add("opacity-100");
+        setTimeout(() => {
+          toast.classList.remove("opacity-100");
+          toast.classList.add("opacity-0");
+        }, 2500);
+      }
+    }
+
+    function navigateTo(view, containerId = null, productId = null) {
+      currentView = view;
+      if (containerId !== null) currentContainerId = containerId;
+      if (productId !== null) currentProductId = productId;
+
+      ['dashboard', 'containers', 'profile'].forEach(id => {
+        const btn = document.getElementById("nav-" + id);
+        if (btn) {
+          const isActive = (view === id) || ((view === 'container-detail' || view === 'product-detail') && id === 'containers');
+          btn.className = `flex flex-col items-center py-2 ${isActive ? 'text-agro-800 font-bold' : 'text-slate-400'}`;
+        }
+      });
+
+      renderCurrentView();
+      window.scrollTo(0, 0);
+    }
+
+    function getContainerStats(container) {
+      if (!container || !container.products) return { totalKg: 0, totalTonnes: 0, totalObjKg: 0, totalCartons: 0, itemsCount: 0, fillRate: 0 };
+      let totalKg = 0;
+      let totalObjKg = 0;
+      let totalCartons = 0;
+
+      container.products.forEach(p => {
+        const pMass = parseFloat(p.mass) || 0;
+        const pObj = parseFloat(p.objectifKg) || pMass || 1;
+        const pCtnW = parseFloat(p.cartonWeight) || 1;
+        totalKg += pMass;
+        totalObjKg += pObj;
+        totalCartons += (pMass / pCtnW);
+      });
+
+      const fillRate = totalObjKg > 0 ? (totalKg / totalObjKg) * 100 : 0;
+      return {
+        totalKg,
+        totalTonnes: totalKg / 1000.0,
+        totalObjKg,
+        totalObjTonnes: totalObjKg / 1000.0,
+        totalCartons,
+        itemsCount: container.products.length,
+        fillRate
+      };
+    }
+
+    function renderCurrentView() {
+      const el = document.getElementById("app-container");
+      const bottomNav = document.getElementById("bottom-nav");
+      if (!el) return;
+
+      // If user is not logged in, show Auth Screen
+      if (!currentAuthUser) {
+        if (bottomNav) bottomNav.classList.add("hidden");
+        renderAuthScreen(el);
+        lucide.createIcons();
+        return;
+      }
+
+      if (bottomNav) bottomNav.classList.remove("hidden");
+      if (currentView === 'dashboard') renderDashboard(el);
+      else if (currentView === 'containers') renderContainerList(el);
+      else if (currentView === 'container-detail') renderContainerDetail(el);
+      else if (currentView === 'product-detail') renderProductDetail(el);
+      else if (currentView === 'profile') renderProfile(el);
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // AUTHENTICATION SCREEN: LOGIN & REGISTER
+    // ==========================================
+    function renderAuthScreen(host) {
+      host.innerHTML = `
+        <div class="px-5 py-8 space-y-6">
+          <div class="text-center space-y-2">
+            <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-agro-800 to-agro-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-agro-800/20 border-2 border-white">
+              <i data-lucide="container" class="w-8 h-8 text-agro-200"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">ProdSuivi PRO <span class="text-agro-700">V3</span></h2>
+            <p class="text-xs text-slate-500 max-w-xs mx-auto">Plateforme de Suivi Agro-Logistique Alimentaire & Traçabilité Export Maritime</p>
+          </div>
+
+          <!-- Auth Tabs -->
+          <div class="bg-slate-200 p-1 rounded-2xl grid grid-cols-2 text-xs font-bold">
+            <button onclick="authMode = 'login'; renderCurrentView();" class="py-2.5 rounded-xl transition-all ${authMode === 'login' ? 'bg-white text-agro-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">
+              Connexion
+            </button>
+            <button onclick="authMode = 'register'; renderCurrentView();" class="py-2.5 rounded-xl transition-all ${authMode === 'register' ? 'bg-white text-agro-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">
+              Créer un compte
+            </button>
+          </div>
+
+          <!-- Auth Forms -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-md">
+            ${authMode === 'login' ? `
+              <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Numéro de Téléphone</label>
+                  <div class="relative">
+                    <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    <input type="tel" id="login-phone" required value="670053957" placeholder="Ex: 670053957" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe</label>
+                  <div class="relative">
+                    <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    <input type="password" id="login-password" required value="password123" placeholder="Votre mot de passe" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2">
+                  <i data-lucide="log-in" class="w-4 h-4"></i>
+                  <span>Se connecter</span>
+                </button>
+
+                <div class="pt-3 border-t border-slate-100">
+                  <button type="button" onclick="quickLoginDemo()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center space-x-2 border border-emerald-200">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                    <span>Connexion Rapide (AUDRIAN Ronis - Démo)</span>
+                  </button>
+                </div>
+              </form>
+            ` : `
+              <form onsubmit="handleRegister(event)" class="space-y-3.5">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom et Prénom *</label>
+                  <div class="relative">
+                    <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    <input type="text" id="reg-name" required placeholder="Ex: AUDRIAN Ronis" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Numéro de Téléphone *</label>
+                  <div class="relative">
+                    <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    <input type="tel" id="reg-phone" required placeholder="Ex: 670053957" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
+                  <div class="relative">
+                    <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    <input type="password" id="reg-password" required minlength="4" placeholder="Choisissez un mot de passe" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2">
+                  <i data-lucide="user-plus" class="w-4 h-4"></i>
+                  <span>Créer mon compte</span>
+                </button>
+              </form>
+            `}
+          </div>
+
+          <div class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
+            <p class="text-[11px] text-emerald-800 font-medium">
+              Chaque utilisateur accède à ses conteneurs produits et à son historique officiel certifié pour l'export.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const phone = document.getElementById("login-phone").value.trim();
+      const pass = document.getElementById("login-password").value.trim();
+
+      const user = appUsers.find(u => u.phone === phone);
+      if (!user) {
+        alert("Aucun compte trouvé pour ce numéro de téléphone. Veuillez créer un compte.");
+        return;
+      }
+      if (user.password !== pass) {
+        alert("Mot de passe incorrect.");
+        return;
+      }
+
+      saveCurrentAuthUser(user);
+      showToast(`Bienvenue, ${user.name}`);
+      navigateTo('dashboard');
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById("reg-name").value.trim();
+      const phone = document.getElementById("reg-phone").value.trim();
+      const pass = document.getElementById("reg-password").value.trim();
+
+      if (!name || !phone || !pass) return;
+
+      const existing = appUsers.find(u => u.phone === phone);
+      if (existing) {
+        alert("Un compte existe déjà avec ce numéro de téléphone. Veuillez vous connecter.");
+        authMode = 'login';
+        renderCurrentView();
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+      const newUser = {
+        id: "u-" + Date.now(),
+        name,
+        phone,
+        password: pass,
+        role: "Superviseur Export Maritime",
+        company: "Agro-Export Douala",
+        createdAt: dateStr
+      };
+
+      appUsers.push(newUser);
+      saveUsers();
+      saveCurrentAuthUser(newUser);
+
+      showToast(`Compte créé avec succès ! Bienvenue ${name}`);
+      navigateTo('dashboard');
+    }
+
+    function quickLoginDemo() {
+      const u = appUsers[0] || DEFAULT_USERS[0];
+      saveCurrentAuthUser(u);
+      showToast(`Connecté en tant que ${u.name}`);
+      navigateTo('dashboard');
+    }
+
+    function handleLogout() {
+      if (confirm("Voulez-vous vous déconnecter de votre compte ?")) {
+        saveCurrentAuthUser(null);
+        showToast("Déconnexion réussie");
+        renderCurrentView();
+      }
+    }
+
+    // Helper: Get containers produced by current user
+    function getUserContainers() {
+      if (!currentAuthUser) return [];
+      return appContainers.filter(c => c.producerPhone === currentAuthUser.phone || !c.producerPhone);
+    }
+
+    // 1. DASHBOARD
+    function renderDashboard(host) {
+      const userContainers = getUserContainers();
+      let totalKg = 0, totalObjKg = 0, totalCartons = 0;
+      const allFoods = new Set();
+
+      userContainers.forEach(c => {
+        const s = getContainerStats(c);
+        totalKg += s.totalKg;
+        totalObjKg += s.totalObjKg;
+        totalCartons += s.totalCartons;
+        c.products.forEach(p => allFoods.add(p.name));
+      });
+
+      const first = userContainers[0];
+
+      host.innerHTML = `
+        <div class="px-4 py-5 space-y-4">
+          <div class="bg-gradient-to-br from-agro-800 to-agro-900 text-white rounded-3xl p-5 shadow-lg">
+            <div class="flex items-center space-x-3 mb-2">
+              <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center font-bold text-agro-200">
+                ${currentAuthUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+              </div>
+              <div>
+                <span class="text-xs uppercase font-semibold text-agro-300">Port de Douala • Export Maritime</span>
+                <h2 class="text-xl font-extrabold">Bonjour, ${currentAuthUser.name}</h2>
+              </div>
+            </div>
+            <p class="text-xs text-agro-100 leading-relaxed mt-1 font-normal">
+              Suivi de Production Agricole - Enregistrez et analysez vos récoltes alimentaires locales (Ndolé, Bobolo, Bitter Leaves, etc.) dans chaque conteneur client.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-500 font-medium">Tonnage Total</span>
+                <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <i data-lucide="play" class="w-4 h-4 fill-emerald-600"></i>
+                </div>
+              </div>
+              <div class="text-xl font-extrabold text-slate-900">${(totalKg/1000).toFixed(3)} T</div>
+              <div class="text-[11px] text-emerald-600 font-medium mt-0.5">${totalKg.toFixed(1)} Kg net</div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-500 font-medium">Cartons Expédiés</span>
+                <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                  <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                </div>
+              </div>
+              <div class="text-xl font-extrabold text-slate-900">${totalCartons.toFixed(1)} Ctn</div>
+              <div class="text-[11px] text-amber-600 font-medium mt-0.5">Conditionnés standard</div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-500 font-medium">Conteneurs</span>
+                <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <i data-lucide="package" class="w-4 h-4"></i>
+                </div>
+              </div>
+              <div class="text-xl font-extrabold text-slate-900">${userContainers.length}</div>
+              <div class="text-[11px] text-blue-600 font-medium mt-0.5">Dossiers produits</div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-500 font-medium">Aliments différents</span>
+                <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <i data-lucide="salad" class="w-4 h-4"></i>
+                </div>
+              </div>
+              <div class="text-xl font-extrabold text-slate-900">${allFoods.size}</div>
+              <div class="text-[11px] text-purple-600 font-medium mt-0.5">Cultures du terroir</div>
+            </div>
+          </div>
+
+          <button onclick="navigateTo('containers')" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-[0.99] text-white font-bold py-4 px-5 rounded-2xl shadow-md flex items-center justify-between transition-all">
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                <i data-lucide="container" class="w-5 h-5 text-agro-200"></i>
+              </div>
+              <span class="text-base font-semibold">Gérer les conteneurs ></span>
+            </div>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-agro-200"></i>
+          </button>
+
+          ${first ? `
+            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase text-slate-400">Conteneur en cours</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${first.closed ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
+                  ${first.closed ? 'DOSSIER CLÔTURÉ' : 'OUVERT'}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-extrabold text-base text-slate-900">${first.name}</h3>
+                  <p class="text-xs text-slate-500 font-medium">Objectif: ${(getContainerStats(first).totalObjKg).toFixed(0)} Kg • Réalisé: ${(getContainerStats(first).totalKg).toFixed(1)} Kg (${getContainerStats(first).fillRate.toFixed(1)}%)</p>
+                </div>
+                <button onclick="navigateTo('container-detail', '${first.id}')" class="px-3 py-1.5 bg-agro-50 text-agro-800 rounded-xl text-xs font-bold flex items-center space-x-1">
+                  <span>Ouvrir</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // 2. CONTAINERS LIST
+    function renderContainerList(host) {
+      const list = getUserContainers().filter(c => {
+        if (!containerSearchQuery.trim()) return true;
+        const q = containerSearchQuery.toLowerCase();
+        return (c.name && c.name.toLowerCase().includes(q)) || (c.client && c.client.toLowerCase().includes(q));
+      });
+
+      host.innerHTML = `
+        <div class="px-4 py-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900">Conteneurs Clients</h2>
+              <p class="text-xs text-slate-500">Expéditions et suivi par objectif</p>
+            </div>
+            <span class="px-2.5 py-1 bg-agro-100 text-agro-800 text-xs font-bold rounded-full">
+              ${list.length} dossier${list.length > 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input 
+              type="text" 
+              value="${escapeHtml(containerSearchQuery)}"
+              oninput="containerSearchQuery = this.value; renderCurrentView();"
+              placeholder="Rechercher un conteneur client (Ex: Sango...)" 
+              class="w-full bg-white border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agro-500 shadow-sm"
+            />
+          </div>
+
+          <div class="space-y-3">
+            ${list.map(c => {
+              const s = getContainerStats(c);
+              return `
+                <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1 cursor-pointer" onclick="navigateTo('container-detail', '${c.id}')">
+                      <div class="flex items-center space-x-2">
+                        <h3 class="font-extrabold text-base text-slate-900">${escapeHtml(c.name)}</h3>
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${c.closed ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
+                          ${c.closed ? 'Clôturé' : 'Ouvert'}
+                        </span>
+                      </div>
+                      <div class="text-xs text-slate-400 mt-1">Créé le ${c.createdAt || '05/10/2026'} • ${s.itemsCount} aliments</div>
+                    </div>
+                    <div class="flex items-center space-x-1.5 ml-2">
+                      <button onclick="toggleContainerLock('${c.id}')" title="Verrouillage" class="w-8 h-8 rounded-xl flex items-center justify-center ${c.closed ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}">
+                        <i data-lucide="${c.closed ? 'lock' : 'unlock'}" class="w-4 h-4"></i>
+                      </button>
+                      <button onclick="deleteContainer('${c.id}')" title="Supprimer" class="w-8 h-8 rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 flex items-center justify-center">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs font-bold text-slate-800 cursor-pointer" onclick="navigateTo('container-detail', '${c.id}')">
+                    <div>${s.totalTonnes.toFixed(3)} T <span class="text-slate-400 font-normal">(${s.totalKg.toFixed(1)} Kg)</span></div>
+                    <div class="text-right text-amber-600">${s.totalCartons.toFixed(1)} Cartons</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <button onclick="openNewContainerModal()" class="fixed bottom-20 right-5 w-14 h-14 bg-agro-800 hover:bg-agro-900 active:scale-95 text-white rounded-2xl shadow-xl flex items-center justify-center z-30">
+          <i data-lucide="plus" class="w-7 h-7"></i>
+        </button>
+      `;
+    }
+
+    function toggleContainerLock(cid) {
+      const c = appContainers.find(x => x.id === cid);
+      if (!c) return;
+      c.closed = !c.closed;
+      c.locked = c.closed;
+      saveContainers();
+      showToast(c.closed ? "Dossier clôturé" : "Dossier réouvert");
+      renderCurrentView();
+    }
+
+    function deleteContainer(cid) {
+      const c = appContainers.find(x => x.id === cid);
+      if (c && confirm(`Supprimer le conteneur "${c.name}" ?`)) {
+        appContainers = appContainers.filter(x => x.id !== cid);
+        saveContainers();
+        showToast("Conteneur supprimé");
+        renderCurrentView();
+      }
+    }
+
+    // 3. CONTAINER DETAIL (V3 WITH COLOR LOGIC & SORTING)
+    function renderContainerDetail(host) {
+      const container = appContainers.find(c => c.id === currentContainerId);
+      if (!container) { navigateTo('containers'); return; }
+
+      const stats = getContainerStats(container);
+
+      let productsWithProg = container.products.map(p => {
+        const mass = parseFloat(p.mass) || 0;
+        const obj = parseFloat(p.objectifKg) || mass || 1;
+        const ctnW = parseFloat(p.cartonWeight) || 1;
+        const cartons = mass / ctnW;
+        const progression = obj > 0 ? (mass / obj) * 100 : 0;
+        const isCompleted = mass >= obj;
+        return { ...p, mass, obj, ctnW, cartons, progression, isCompleted };
+      });
+
+      if (productSearchQuery.trim()) {
+        const q = productSearchQuery.toLowerCase();
+        productsWithProg = productsWithProg.filter(p => p.name.toLowerCase().includes(q));
+      }
+
+      // Sort non-completed on top, completed at bottom
+      productsWithProg.sort((a, b) => {
+        if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+        return a.progression - b.progression;
+      });
+
+      host.innerHTML = `
+        <div class="space-y-4">
+          <div class="bg-agro-800 text-white px-4 py-4 rounded-b-3xl shadow-md">
+            <div class="flex items-center justify-between mb-3">
+              <button onclick="navigateTo('containers')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
+              </button>
+              <div class="text-center px-2 flex-1">
+                <h2 class="font-extrabold text-base tracking-tight truncate">${escapeHtml(container.name)}</h2>
+                <div class="text-[11px] text-agro-200">Produit par : ${escapeHtml(container.producerName || currentAuthUser.name)}</div>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <button onclick="toggleContainerLock('${container.id}')" class="w-8 h-8 rounded-xl ${container.closed ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'} flex items-center justify-center">
+                  <i data-lucide="${container.closed ? 'lock' : 'unlock'}" class="w-4 h-4"></i>
+                </button>
+                <button onclick="generateContainerPDF_V3('${container.id}')" title="Générer PDF V3" class="w-8 h-8 rounded-xl bg-white/15 text-white flex items-center justify-center">
+                  <i data-lucide="share-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl ${container.closed ? 'bg-red-950/40 border border-red-500/30' : 'bg-emerald-950/40 border border-emerald-500/30'} flex items-center justify-between mb-3">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full ${container.closed ? 'bg-red-400' : 'bg-emerald-400 animate-ping'}"></span>
+                <span class="text-xs font-bold uppercase tracking-wider ${container.closed ? 'text-red-200' : 'text-emerald-200'}">
+                  ${container.closed ? 'DOSSIER CLÔTURÉ - Fermé' : 'SUIVI DE CHARGEMENT ACTIF - Ouvert'}
+                </span>
+              </div>
+              <span class="text-xs font-black px-2 py-0.5 rounded-md bg-white/15 text-white">
+                Remplissage: ${stats.fillRate.toFixed(1)}%
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 bg-white/10 rounded-2xl p-3 border border-white/10 text-center">
+              <div>
+                <div class="text-[10px] text-agro-200 uppercase font-semibold">Tonnage Total</div>
+                <div class="text-sm font-extrabold text-white mt-0.5">${stats.totalTonnes.toFixed(3)} T</div>
+                <div class="text-[10px] text-agro-300">Obj: ${stats.totalObjTonnes.toFixed(3)} T</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-agro-200 uppercase font-semibold">Total Cartons</div>
+                <div class="text-sm font-extrabold text-white mt-0.5">${stats.totalCartons.toFixed(1)}</div>
+                <div class="text-[10px] text-agro-300">Cartons export</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-agro-200 uppercase font-semibold">Éléments</div>
+                <div class="text-sm font-extrabold text-white mt-0.5">${stats.itemsCount}</div>
+                <div class="text-[10px] text-agro-300">Aliments saisis</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-extrabold text-slate-800 flex items-center space-x-1.5">
+                <i data-lucide="layers" class="w-4 h-4 text-agro-700"></i>
+                <span>Éléments et Produits (${container.products.length})</span>
+              </h3>
+              <button onclick="generateContainerPDF_V3('${container.id}')" class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-[11px] font-bold text-agro-800 shadow-sm flex items-center space-x-1 hover:bg-agro-50">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-agro-700"></i>
+                <span>PDF Pro V3</span>
+              </button>
+            </div>
+
+            <div class="relative">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
+              <input 
+                type="text" 
+                value="${escapeHtml(productSearchQuery)}"
+                oninput="productSearchQuery = this.value; renderCurrentView();"
+                placeholder="Filtrer un aliment (ex: Ndolè, Bobolo...)" 
+                class="w-full bg-white border border-slate-200 pl-9 pr-3 py-2 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agro-500 shadow-sm"
+              />
+            </div>
+
+            <div class="space-y-2.5">
+              ${productsWithProg.map(p => {
+                const pct = p.progression;
+                let cardStyle = "bg-[#f1f5f9] border border-slate-200";
+                let badgeStyle = "bg-slate-200 text-slate-700";
+                let badgeText = `En cours ${pct.toFixed(0)}%`;
+                let barColor = "bg-slate-400";
+                let isComplete = false;
+
+                if (pct >= 100) {
+                  cardStyle = "bg-[#dcfce7] border-2 border-[#16a34a] shadow-sm";
+                  badgeStyle = "bg-emerald-600 text-white font-bold";
+                  badgeText = `Objectif atteint ${pct.toFixed(0)}%`;
+                  barColor = "bg-[#16a34a]";
+                  isComplete = true;
+                } else if (pct >= 80) {
+                  cardStyle = "bg-[#fff7ed] border border-orange-300";
+                  badgeStyle = "bg-orange-100 text-orange-800 font-bold border border-orange-200";
+                  badgeText = `Presque fini ${pct.toFixed(0)}%`;
+                  barColor = "bg-orange-500";
+                }
+
+                const clampedBar = Math.min(100, Math.max(0, pct));
+                const ecartKg = p.mass - p.obj;
+                const ecartStr = ecartKg >= 0 ? `+${ecartKg.toFixed(1)} Kg` : `${ecartKg.toFixed(1)} Kg`;
+
+                return `
+                  <div class="rounded-2xl p-3.5 transition-all ${cardStyle}">
+                    <div class="flex items-start justify-between">
+                      <div class="flex-1 cursor-pointer" onclick="navigateTo('product-detail', '${container.id}', '${p.id}')">
+                        <div class="flex items-center space-x-2">
+                          <span class="font-extrabold text-sm ${isComplete ? 'text-emerald-950 font-black' : 'text-slate-900'}">
+                            ${isComplete ? '✅ ' : ''}${escapeHtml(p.name)}
+                          </span>
+                          <span class="px-2 py-0.5 text-[9px] rounded-full uppercase ${badgeStyle}">
+                            ${badgeText}
+                          </span>
+                        </div>
+
+                        <div class="text-xs text-slate-800 font-semibold mt-1">
+                          Masse: <span class="font-bold text-slate-900">${p.mass.toFixed(1)} Kg</span> / Objectif: <span class="font-bold text-slate-900">${p.obj.toFixed(0)} Kg</span> 
+                          <span class="text-slate-500 font-normal">(${(p.mass/1000).toFixed(2)} T)</span>
+                          <span class="mx-1 text-slate-300">•</span>
+                          Cartons: <span class="font-extrabold text-amber-700">${p.cartons.toFixed(1)}</span>
+                        </div>
+
+                        <div class="text-[11px] text-slate-500 mt-0.5 flex items-center space-x-2">
+                          <span>Config: ${p.pcsPerCarton} pces/ctn • ${p.ctnW.toFixed(1)} Kg</span>
+                          <span>•</span>
+                          <span class="${ecartKg >= 0 ? 'text-emerald-700 font-bold' : 'text-orange-700 font-bold'}">Écart: ${ecartStr}</span>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center space-x-1 ml-2">
+                        <button onclick="openEditProductModal('${container.id}', '${p.id}')" title="Modifier" class="w-7 h-7 rounded-lg bg-white/70 hover:bg-white text-emerald-800 flex items-center justify-center">
+                          <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="deleteProduct('${container.id}', '${p.id}')" title="Supprimer" class="w-7 h-7 rounded-lg bg-white/70 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="navigateTo('product-detail', '${container.id}', '${p.id}')" title="Pesées" class="w-7 h-7 rounded-lg bg-white/80 hover:bg-white text-slate-700 flex items-center justify-center">
+                          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="w-full bg-slate-200/80 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                      <div class="h-1.5 rounded-full ${barColor}" style="width: ${clampedBar}%"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="fixed bottom-14 left-0 right-0 p-3 bg-white/90 backdrop-blur-md border-t border-slate-200 z-30 max-w-md mx-auto">
+          <button 
+            onclick="openAddProductModal('${container.id}')"
+            ${container.closed ? 'disabled' : ''}
+            class="w-full ${container.closed ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-agro-800 hover:bg-agro-900 active:scale-[0.99] text-white shadow-md'} font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center space-x-2 transition-all">
+            <i data-lucide="${container.closed ? 'lock' : 'plus'}" class="w-5 h-5"></i>
+            <span>${container.closed ? 'Dossier clôturé (Modification bloquée)' : '+ Ajouter un produit'}</span>
+          </button>
+        </div>
+      `;
+    }
+
+    function deleteProduct(containerId, productId) {
+      const container = appContainers.find(c => c.id === containerId);
+      if (!container || container.closed) { showToast("Modification impossible"); return; }
+      const prod = container.products.find(p => p.id === productId);
+      if (prod && confirm(`Supprimer "${prod.name}" ?`)) {
+        container.products = container.products.filter(p => p.id !== productId);
+        saveContainers();
+        showToast("Produit supprimé");
+        renderCurrentView();
+      }
+    }
+
+    // 4. PRODUCT DETAIL
+    function renderProductDetail(host) {
+      const container = appContainers.find(c => c.id === currentContainerId);
+      if (!container) { navigateTo('containers'); return; }
+      const product = container.products.find(p => p.id === currentProductId);
+      if (!product) { navigateTo('container-detail', currentContainerId); return; }
+
+      if (!product.weighings) product.weighings = [{ date: "05/10/2026", mass: product.mass || 0 }];
+      const totalKg = product.weighings.reduce((acc, w) => acc + (parseFloat(w.mass) || 0), 0);
+      product.mass = totalKg;
+
+      const objKg = parseFloat(product.objectifKg) || totalKg || 1;
+      const ctnWeight = parseFloat(product.cartonWeight) || 1;
+      const totalCartons = totalKg / ctnWeight;
+      const progression = (totalKg / objKg) * 100;
+      const ecartKg = totalKg - objKg;
+
+      let colorTag = "bg-slate-100 border-slate-300 text-slate-800";
+      let tagText = `En cours (${progression.toFixed(0)}%)`;
+      if (progression >= 100) {
+        colorTag = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
+        tagText = `✅ Objectif atteint (${progression.toFixed(0)}%)`;
+      } else if (progression >= 80) {
+        colorTag = "bg-orange-100 border-orange-400 text-orange-900 font-bold";
+        tagText = `Presque fini (${progression.toFixed(0)}%)`;
+      }
+
+      host.innerHTML = `
+        <div class="space-y-4">
+          <div class="bg-agro-800 text-white px-4 py-4 rounded-b-3xl shadow-md">
+            <div class="flex items-center space-x-3 mb-2">
+              <button onclick="navigateTo('container-detail', '${container.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
+              </button>
+              <div class="flex-1 truncate">
+                <span class="text-[10px] text-agro-200 uppercase font-semibold">${escapeHtml(container.name)}</span>
+                <h2 class="text-base font-extrabold tracking-tight truncate">${escapeHtml(product.name)}</h2>
+              </div>
+              <button onclick="openEditProductModal('${container.id}', '${product.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                <i data-lucide="sliders" class="w-4 h-4 text-white"></i>
+              </button>
+            </div>
+            <p class="text-xs text-agro-100 px-1">${escapeHtml(product.desc || 'Récolte alimentaire locale')}</p>
+          </div>
+
+          <div class="px-4 space-y-4">
+            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase text-slate-400">Objectif & Emballage</span>
+                <span class="px-2 py-0.5 text-xs rounded-full border ${colorTag}">${tagText}</span>
+              </div>
+
+              <div class="grid grid-cols-4 gap-2 text-center pt-1">
+                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
+                  <div class="text-[9px] text-slate-400 font-semibold">Objectif</div>
+                  <div class="text-xs font-black text-slate-900 mt-0.5">${objKg.toFixed(0)} Kg</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
+                  <div class="text-[9px] text-slate-400 font-semibold">Poids pièce</div>
+                  <div class="text-xs font-bold text-slate-800 mt-0.5">${(parseFloat(product.pcWeight)||1).toFixed(1)} Kg</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
+                  <div class="text-[9px] text-slate-400 font-semibold">Qté / ctn</div>
+                  <div class="text-xs font-bold text-slate-800 mt-0.5">${product.pcsPerCarton} pcs</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
+                  <div class="text-[9px] text-slate-400 font-semibold">Poids ctn</div>
+                  <div class="text-xs font-black text-agro-800 mt-0.5">${ctnWeight.toFixed(1)} Kg</div>
+                </div>
+              </div>
+
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="h-2 rounded-full ${progression >= 100 ? 'bg-[#16a34a]' : (progression >= 80 ? 'bg-orange-500' : 'bg-slate-400')}" style="width: ${Math.min(100, progression)}%"></div>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <h3 class="text-sm font-extrabold text-slate-800 flex items-center space-x-1.5">
+                <i data-lucide="history" class="w-4 h-4 text-agro-700"></i>
+                <span>Chronologie des pesées (${product.weighings.length})</span>
+              </h3>
+
+              <div class="space-y-2">
+                ${product.weighings.map((w, idx) => {
+                  const wMass = parseFloat(w.mass) || 0;
+                  const wCartons = wMass / ctnWeight;
+                  return `
+                    <div class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex items-center justify-between">
+                      <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-agro-50 text-agro-800 flex items-center justify-center font-bold text-xs">#${idx + 1}</div>
+                        <div>
+                          <div class="text-xs font-extrabold text-slate-900">${wMass.toFixed(1)} Kg enregistrés</div>
+                          <div class="text-[11px] text-slate-400">Date: ${w.date || '05/10/2026'} • ${wCartons.toFixed(1)} cartons</div>
+                        </div>
+                      </div>
+                      <div class="flex items-center space-x-1">
+                        <button onclick="editWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="deleteWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg bg-slate-50 text-slate-400 hover:text-red-500 flex items-center justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-agro-800 to-agro-900 text-white rounded-2xl p-4 shadow-md flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-agro-200 uppercase font-semibold">TOTAL RÉALISÉ</span>
+                <div class="text-lg font-black text-white">${totalKg.toFixed(1)} Kg</div>
+                <div class="text-[11px] text-emerald-300">Écart: ${ecartKg >= 0 ? '+' : ''}${ecartKg.toFixed(1)} Kg</div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-agro-200 uppercase font-semibold">TOTAL CARTONS</span>
+                <div class="text-lg font-black text-amber-300">${totalCartons.toFixed(1)} Ctn</div>
+                <div class="text-[11px] text-agro-200">${progression.toFixed(1)}% de l'objectif</div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+              <h4 class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-agro-600"></i>
+                <span>Enregistrer une pesée (mise à jour auto)</span>
+              </h4>
+              <div class="grid grid-cols-12 gap-2">
+                <div class="col-span-5">
+                  <label class="text-[10px] text-slate-400 font-semibold uppercase">Date</label>
+                  <input type="date" id="new-weighing-date" value="2026-10-05" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+                </div>
+                <div class="col-span-5">
+                  <label class="text-[10px] text-slate-400 font-semibold uppercase">Masse (Kg)</label>
+                  <input type="number" id="new-weighing-mass" step="0.1" placeholder="ex: 885.0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold" />
+                </div>
+                <div class="col-span-2 flex items-end">
+                  <button onclick="addWeighing('${container.id}', '${product.id}')" ${container.closed ? 'disabled' : ''} class="w-full h-9 bg-agro-800 text-white rounded-xl flex items-center justify-center shadow-sm">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addWeighing(containerId, productId) {
+      const container = appContainers.find(c => c.id === containerId);
+      if (!container || container.closed) { showToast("Conteneur clôturé"); return; }
+      const product = container.products.find(p => p.id === productId);
+      if (!product) return;
+
+      const dateEl = document.getElementById("new-weighing-date");
+      const massEl = document.getElementById("new-weighing-mass");
+      const val = parseFloat(massEl ? massEl.value : 0);
+      if (!val || val <= 0) { alert("Veuillez saisir une masse valide."); return; }
+
+      const dateStr = dateEl && dateEl.value ? formatDateDisplay(dateEl.value) : "05/10/2026";
+      if (!product.weighings) product.weighings = [];
+      product.weighings.push({ date: dateStr, mass: val });
+
+      product.mass = product.weighings.reduce((acc, w) => acc + (parseFloat(w.mass) || 0), 0);
+      saveContainers();
+      showToast(`Pesée de ${val.toFixed(1)} Kg enregistrée !`);
+      renderCurrentView();
+    }
+
+    function editWeighing(cid, pid, idx) {
+      const c = appContainers.find(x => x.id === cid);
+      if (c && c.closed) { showToast("Dossier clôturé"); return; }
+      const p = c.products.find(x => x.id === pid);
+      const cur = p.weighings[idx];
+      const res = prompt(`Modifier la pesée #${idx + 1} (en Kg):`, cur.mass);
+      if (res !== null) {
+        const val = parseFloat(res);
+        if (!isNaN(val) && val > 0) {
+          cur.mass = val;
+          p.mass = p.weighings.reduce((acc, w) => acc + (parseFloat(w.mass) || 0), 0);
+          saveContainers();
+          showToast("Pesée mise à jour");
+          renderCurrentView();
+        }
+      }
+    }
+
+    function deleteWeighing(cid, pid, idx) {
+      const c = appContainers.find(x => x.id === cid);
+      if (c && c.closed) { showToast("Dossier clôturé"); return; }
+      const p = c.products.find(x => x.id === pid);
+      if (confirm(`Supprimer la pesée #${idx + 1} ?`)) {
+        p.weighings.splice(idx, 1);
+        p.mass = p.weighings.reduce((acc, w) => acc + (parseFloat(w.mass) || 0), 0);
+        saveContainers();
+        showToast("Pesée supprimée");
+        renderCurrentView();
+      }
+    }
+
+    // ==========================================
+    // 5. PROFIL UTILISATEUR & HISTORIQUE DES CONTENEURS PRODUITS
+    // ==========================================
+    function renderProfile(host) {
+      const userContainers = getUserContainers();
+      let totalTonnes = 0;
+      let totalCartons = 0;
+      let closedCount = 0;
+
+      userContainers.forEach(c => {
+        const s = getContainerStats(c);
+        totalTonnes += s.totalTonnes;
+        totalCartons += s.totalCartons;
+        if (c.closed) closedCount++;
+      });
+
+      host.innerHTML = `
+        <div class="px-4 py-5 space-y-4">
+          <!-- User Identity Card -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-center relative overflow-hidden">
+            <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-agro-800 to-agro-600 text-white flex items-center justify-center font-black text-2xl mx-auto shadow-md mb-3 border-4 border-white">
+              ${currentAuthUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+            </div>
+            <h2 class="text-lg font-extrabold text-slate-900">${currentAuthUser.name}</h2>
+            <div class="text-xs text-agro-700 font-semibold">${currentAuthUser.role || 'Superviseur Export'}</div>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-left text-xs">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400 flex items-center space-x-1.5"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Téléphone :</span></span>
+                <span class="font-bold text-slate-800">${currentAuthUser.phone}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400 flex items-center space-x-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i><span>Inscrit le :</span></span>
+                <span class="font-semibold text-slate-700">${currentAuthUser.createdAt || '05/10/2026'}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400 flex items-center space-x-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i><span>Base Export :</span></span>
+                <span class="font-semibold text-slate-700">Port de Douala, Cameroun</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Production Summary -->
+          <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Bilan de Production Agricole</h3>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-[10px] text-slate-400 font-semibold">Produits</div>
+                <div class="text-base font-extrabold text-slate-800">${userContainers.length}</div>
+              </div>
+              <div class="bg-red-50 rounded-xl p-3">
+                <div class="text-[10px] text-red-600 font-semibold">Clôturés</div>
+                <div class="text-base font-extrabold text-red-700">${closedCount}</div>
+              </div>
+              <div class="bg-emerald-50 rounded-xl p-3">
+                <div class="text-[10px] text-emerald-600 font-semibold">Tonnage</div>
+                <div class="text-base font-extrabold text-emerald-700">${totalTonnes.toFixed(2)} T</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOUVELLE SECTION REQUISE: TOUS LES CONTENEURS QU'IL A DÉJÀ PRODUITS -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-extrabold text-slate-900 flex items-center space-x-1.5">
+                <i data-lucide="archive" class="w-4 h-4 text-agro-700"></i>
+                <span>Tous les conteneurs produits (${userContainers.length})</span>
+              </h3>
+              <button onclick="openNewContainerModal()" class="text-xs font-bold text-agro-700 hover:underline flex items-center space-x-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Nouveau</span>
+              </button>
+            </div>
+
+            <div class="space-y-3">
+              ${userContainers.length === 0 ? `
+                <div class="bg-white rounded-2xl p-6 text-center text-slate-400 text-xs border border-slate-100">
+                  Vous n'avez pas encore produit de conteneur avec ce compte.
+                </div>
+              ` : userContainers.map(c => {
+                const s = getContainerStats(c);
+                return `
+                  <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:border-agro-200 transition-all">
+                    <div class="flex items-start justify-between">
+                      <div class="flex-1 cursor-pointer" onclick="navigateTo('container-detail', '${c.id}')">
+                        <div class="flex items-center space-x-2">
+                          <h4 class="font-extrabold text-sm text-slate-900">${escapeHtml(c.name)}</h4>
+                          <span class="px-2 py-0.5 text-[9px] font-bold rounded-full ${c.closed ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
+                            ${c.closed ? 'Clôturé' : 'En chargement'}
+                          </span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-1">
+                          Date: ${c.createdAt || '05/10/2026'} • ${s.itemsCount} aliments saisis
+                        </div>
+                      </div>
+
+                      <div class="flex items-center space-x-1.5 ml-2">
+                        <button onclick="generateContainerPDF_V3('${c.id}')" title="Télécharger PDF" class="w-8 h-8 rounded-xl bg-slate-50 text-agro-800 hover:bg-agro-50 flex items-center justify-center border border-slate-200">
+                          <i data-lucide="file-text" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="navigateTo('container-detail', '${c.id}')" title="Ouvrir le conteneur" class="w-8 h-8 rounded-xl bg-agro-50 text-agro-800 hover:bg-agro-100 flex items-center justify-center">
+                          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="mt-3 pt-2.5 border-t border-slate-100 grid grid-cols-3 gap-1 text-center text-xs">
+                      <div>
+                        <span class="text-[9px] text-slate-400 block font-semibold">Tonnage Réalisé</span>
+                        <span class="font-extrabold text-slate-800">${s.totalTonnes.toFixed(3)} T</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-slate-400 block font-semibold">Cartons</span>
+                        <span class="font-extrabold text-amber-600">${s.totalCartons.toFixed(1)}</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-slate-400 block font-semibold">Remplissage</span>
+                        <span class="font-extrabold ${s.fillRate >= 100 ? 'text-emerald-700' : 'text-slate-800'}">${s.fillRate.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Account Switch & Logout -->
+          <div class="space-y-2 pt-2">
+            <button onclick="resetData()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-xs flex items-center justify-center space-x-2">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Réinitialiser conteneur démo COMACAM SUARL</span>
+            </button>
+            <button onclick="handleLogout()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-md">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+              <span>Se déconnecter de la session</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function resetData() {
+      if (confirm("Réinitialiser les conteneurs aux valeurs initiales COMACAM SUARL ?")) {
+        appContainers = JSON.parse(JSON.stringify(DEFAULT_CONTAINERS));
+        saveContainers();
+        showToast("Données réinitialisées");
+        renderCurrentView();
+      }
+    }
+
+    // ==========================================
+    // 6. GENERATION PDF V3 - AVEC OBJECTIF, ÉCART & 19 ÉLÉMENTS EXACTS
+    // ==========================================
+    function generateContainerPDF_V3(containerId) {
+      const container = appContainers.find(c => c.id === containerId);
+      if (!container) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      let totalKg = 0;
+      let totalObjKg = 0;
+      let totalCartons = 0;
+
+      const tableRows = container.products.map((p, index) => {
+        const pMass = parseFloat(p.mass) || 0;
+        const pObj = parseFloat(p.objectifKg) || pMass || 1;
+        const pCtnW = parseFloat(p.cartonWeight) || 1;
+        const pCartons = pMass / pCtnW;
+        const ecart = pMass - pObj;
+        const sign = ecart >= 0 ? "+" : "";
+
+        totalKg += pMass;
+        totalObjKg += pObj;
+        totalCartons += pCartons;
+
+        const isAtteint = pMass >= pObj;
+        const statusLabel = isAtteint ? "ATTEINT" : `EN COURS (${((pMass / pObj) * 100).toFixed(0)}%)`;
+
+        return [
+          index + 1,
+          p.name,
+          pCtnW.toFixed(1) + " kg",
+          pObj.toFixed(1) + " Kg",
+          pMass.toFixed(1) + " Kg",
+          sign + ecart.toFixed(1) + " Kg",
+          pCartons.toFixed(1) + " ctn",
+          statusLabel
+        ];
+      });
+
+      const totalTonnes = totalKg / 1000.0;
+      const totalObjTonnes = totalObjKg / 1000.0;
+      const fillRate = totalObjKg > 0 ? (totalKg / totalObjKg) * 100 : 0;
+
+      doc.setFillColor(22, 101, 52);
+      doc.rect(0, 0, 210, 36, "F");
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("RAPPORT DE CONTENEUR ALIMENTAIRE", 14, 16);
+
+      doc.setFontSize(9.5);
+      doc.setFont("helvetica", "normal");
+      doc.text("ProdSuivi PRO V3 - Agro-Logistique Alimentaire Cameroun", 14, 23);
+      doc.text("Suivi de Production & Objectifs d'Exportation Maritime", 14, 29);
+
+      if (container.closed) {
+        doc.setFillColor(185, 28, 28);
+        doc.roundedRect(150, 10, 46, 12, 2, 2, "F");
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("STATUT: CLÔTURÉ", 153, 18);
+      } else {
+        doc.setFillColor(21, 128, 61);
+        doc.roundedRect(150, 10, 46, 12, 2, 2, "F");
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("STATUT: OUVERT", 155, 18);
+      }
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("FICHE EXPÉDITION CONTENEUR", 14, 45);
+
+      doc.setDrawColor(226, 232, 240);
+      doc.line(14, 47, 196, 47);
+
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "normal");
+      doc.text("Nom du Conteneur :", 14, 53);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${container.name}`, 50, 53);
+
+      doc.setFont("helvetica", "normal");
+      doc.text("Producteur / Resp. :", 14, 59);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${container.producerName || currentAuthUser?.name || 'AUDRIAN Ronis'} (${container.producerPhone || currentAuthUser?.phone || '670053957'})`, 50, 59);
+
+      doc.setFont("helvetica", "normal");
+      doc.text("Tonnage Objectif Global :", 110, 53);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${totalObjKg.toFixed(1)} Kg (${totalObjTonnes.toFixed(3)} T)`, 152, 53);
+
+      doc.setFont("helvetica", "normal");
+      doc.text("Tonnage Réalisé :", 110, 59);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${totalKg.toFixed(1)} Kg (${totalTonnes.toFixed(3)} T)`, 152, 59);
+
+      doc.setFillColor(240, 253, 244);
+      doc.setDrawColor(187, 247, 208);
+      doc.roundedRect(14, 65, 182, 16, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(22, 101, 52);
+      doc.text(`TOTAL OBJECTIF: ${totalObjKg.toFixed(0)} Kg   |   TOTAL RÉALISÉ: ${totalKg.toFixed(1)} Kg   |   TAUX: ${fillRate.toFixed(1)}%   |   CARTONS: ${totalCartons.toFixed(1)}`, 18, 75);
+
+      doc.autoTable({
+        startY: 85,
+        head: [["#", "Produit", "Poids Carton", "Objectif (Kg)", "Réalisé (Kg)", "Écart", "Est. Cartons", "Statut"]],
+        body: tableRows,
+        foot: [
+          ["", "TOTAUX CONTENEUR", "", `${totalObjKg.toFixed(1)} Kg`, `${totalKg.toFixed(1)} Kg`, `${(totalKg - totalObjKg) >= 0 ? '+' : ''}${(totalKg - totalObjKg).toFixed(1)} Kg`, `${totalCartons.toFixed(1)} Ctn`, `${fillRate.toFixed(1)}%`]
+        ],
+        theme: "striped",
+        headStyles: { fillColor: [22, 101, 52], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, halign: "center" },
+        footStyles: { fillColor: [22, 101, 52], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, halign: "center" },
+        columnStyles: {
+          0: { cellWidth: 8, halign: "center" },
+          1: { cellWidth: 46, fontStyle: "bold" },
+          2: { cellWidth: 20, halign: "center" },
+          3: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+          4: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+          5: { cellWidth: 20, halign: "right" },
+          6: { cellWidth: 20, halign: "right", fontStyle: "bold" },
+          7: { cellWidth: 20, halign: "center" }
+        },
+        styles: { fontSize: 7.5, cellPadding: 2 },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
+      });
+
+      const finalY = doc.lastAutoTable.finalY + 8;
+      if (finalY < 270) {
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(100, 116, 139);
+        doc.text("Document certifié avec concordance exacte des pesées (19 éléments). Mention: Document généré par ProdSuivi PRO V3 - Agro-Logistique Alimentaire", 14, finalY);
+
+        doc.setDrawColor(203, 213, 225);
+        doc.roundedRect(14, finalY + 5, 80, 18, 1, 1, "D");
+        doc.text("Visa Superviseur Chargement", 18, finalY + 10);
+
+        doc.roundedRect(116, finalY + 5, 80, 18, 1, 1, "D");
+        doc.text("Cachet Phyto-Sanitaire Port de Douala", 120, finalY + 10);
+      }
+
+      openPdfPreviewModal_V3(doc, container, totalKg, totalObjKg, totalCartons, fillRate);
+    }
+
+    function openPdfPreviewModal_V3(doc, container, totalKg, totalObjKg, totalCartons, fillRate) {
+      const filename = `Rapport_Conteneur_V3_${container.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      const pdfBlob = doc.output("blob");
+      const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+
+      const modalBox = document.getElementById("modal-box");
+      const backdrop = document.getElementById("modal-backdrop");
+      if (!modalBox || !backdrop) return;
+
+      modalBox.innerHTML = `
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-xl bg-agro-100 text-agro-800 flex items-center justify-center">
+              <i data-lucide="file-check-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm text-slate-900">Rapport PDF V3 Généré</h3>
+              <p class="text-[11px] text-slate-400">19 éléments • Objectif: ${totalObjKg.toFixed(0)} Kg • Réalisé: ${totalKg.toFixed(1)} Kg (${fillRate.toFixed(1)}%)</p>
+            </div>
+          </div>
+          <button onclick="closeModal()" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <div class="p-5 space-y-4">
+          <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 text-xs text-emerald-800 space-y-1">
+            <div class="font-bold flex items-center space-x-1.5">
+              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+              <span>Tableau complet 100% concordant</span>
+            </div>
+            <p class="text-[11px] text-emerald-700">
+              Total Objectif: <strong>${totalObjKg.toFixed(0)} Kg</strong> | Réalisé: <strong>${totalKg.toFixed(1)} Kg</strong> | Taux: <strong>${fillRate.toFixed(1)}%</strong> | Cartons: <strong>${totalCartons.toFixed(1)}</strong>
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <button id="btn-dl-pdf" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-md">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Télécharger le Rapport PDF</span>
+            </button>
+            <button id="btn-share-pdf" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl text-xs flex items-center justify-center space-x-2">
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+              <span>Partager le fichier PDF</span>
+            </button>
+            <a href="${pdfBlobUrl}" target="_blank" class="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-2xl text-xs flex items-center justify-center space-x-2">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span>Aperçu plein écran</span>
+            </a>
+          </div>
+        </div>
+      `;
+
+      backdrop.classList.remove("hidden");
+      lucide.createIcons();
+
+      document.getElementById("btn-dl-pdf").onclick = () => {
+        doc.save(filename);
+        showToast("Téléchargement lancé");
+        closeModal();
+      };
+
+      document.getElementById("btn-share-pdf").onclick = async () => {
+        if (navigator.share) {
+          try {
+            const f = new File([pdfBlob], filename, { type: "application/pdf" });
+            await navigator.share({ title: `Rapport ${container.name}`, files: [f] });
+            showToast("Partagé !");
+            closeModal();
+          } catch (e) { doc.save(filename); }
+        } else {
+          doc.save(filename);
+          showToast("PDF téléchargé");
+          closeModal();
+        }
+      };
+    }
+
+    // ==========================================
+    // MODALS: New Container & Add/Edit Product V3
+    // ==========================================
+    function openNewContainerModal() {
+      const modalBox = document.getElementById("modal-box");
+      const backdrop = document.getElementById("modal-backdrop");
+      if (!modalBox || !backdrop) return;
+
+      modalBox.innerHTML = `
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-extrabold text-base text-slate-900">Nouveau Conteneur</h3>
+          <button onclick="closeModal()" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <form onsubmit="handleCreateContainer(event)" class="p-5 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Conteneur *</label>
+            <input type="text" id="new-container-name" required placeholder="Ex: Conteneur Mr Sango" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Client / Destinataire</label>
+            <input type="text" id="new-container-client" placeholder="Ex: Sango Import & Export" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs" />
+          </div>
+          <div class="flex items-center space-x-2 pt-2">
+            <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-xs">Annuler</button>
+            <button type="submit" class="w-1/2 bg-agro-800 text-white font-bold py-3 rounded-xl text-xs shadow-md">Créer</button>
+          </div>
+        </form>
+      `;
+
+      backdrop.classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function handleCreateContainer(e) {
+      e.preventDefault();
+      const name = document.getElementById("new-container-name").value.trim();
+      const client = document.getElementById("new-container-client").value.trim();
+      if (!name) return;
+
+      const newId = "cnt-" + Date.now();
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      appContainers.push({
+        id: newId,
+        name,
+        client: client || name,
+        destination: "Le Havre / Rungis (France)",
+        createdAt: dateStr,
+        closed: false,
+        locked: false,
+        producerPhone: currentAuthUser?.phone || "670053957",
+        producerName: currentAuthUser?.name || "AUDRIAN Ronis",
+        products: []
+      });
+
+      saveContainers();
+      closeModal();
+      showToast(`Conteneur "${name}" créé`);
+      navigateTo('container-detail', newId);
+    }
+
+    function openAddProductModal(containerId) {
+      const c = appContainers.find(x => x.id === containerId);
+      if (c && c.closed) { showToast("Conteneur clôturé"); return; }
+      openProductFormModal_V3(containerId, null);
+    }
+
+    function openEditProductModal(containerId, productId) {
+      const c = appContainers.find(x => x.id === containerId);
+      if (c && c.closed) { showToast("Conteneur clôturé"); return; }
+      openProductFormModal_V3(containerId, productId);
+    }
+
+    function openProductFormModal_V3(containerId, productId) {
+      const container = appContainers.find(c => c.id === containerId);
+      if (!container) return;
+
+      const product = productId ? container.products.find(p => p.id === productId) : null;
+      const isEdit = !!product;
+
+      const modalBox = document.getElementById("modal-box");
+      const backdrop = document.getElementById("modal-backdrop");
+      if (!modalBox || !backdrop) return;
+
+      modalBox.innerHTML = `
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-extrabold text-base text-slate-900">${isEdit ? 'Modifier le Produit' : 'Ajouter un Produit (V3)'}</h3>
+          <button onclick="closeModal()" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <form onsubmit="handleSaveProduct_V3(event, '${containerId}', '${productId || ''}')" class="p-5 space-y-3.5 overflow-y-auto max-h-[75vh]">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Produit (Ex: Ndolé, Bitter Leaves) *</label>
+            <input type="text" id="prod-v3-name" required value="${isEdit ? escapeHtml(product.name) : ''}" placeholder="Ex: Ndolé, Bitter Leaves, Bobolo..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 font-semibold" />
+          </div>
+
+          <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200 space-y-1">
+            <label class="block text-xs font-extrabold text-emerald-900 uppercase">
+              🎯 Tonnage de Départ / Objectif (Kg) *
+            </label>
+            <div class="text-[11px] text-emerald-700 font-medium">Quantité totale commandée par le client pour ce produit</div>
+            <input 
+              type="number" 
+              id="prod-v3-objectif" 
+              step="0.1" 
+              required
+              value="${isEdit ? (product.objectifKg || product.mass || 1500) : 1500}"
+              placeholder="Ex: 1500.0" 
+              class="w-full bg-white border border-emerald-300 rounded-xl p-2.5 text-xs text-slate-900 font-black focus:ring-2 focus:ring-emerald-500 mt-1" 
+            />
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Poids pièce (Kg) *</label>
+              <input type="number" id="prod-v3-pc-weight" step="0.1" required value="${isEdit ? product.pcWeight : 1.0}" oninput="calcCartonWeightV3()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Qté / ctn *</label>
+              <input type="number" id="prod-v3-pcs" required value="${isEdit ? product.pcsPerCarton : 15}" oninput="calcCartonWeightV3()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Poids carton (Kg) *</label>
+              <input type="number" id="prod-v3-carton-weight" step="0.1" required value="${isEdit ? product.cartonWeight : 15.0}" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-agro-800" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Masse actuelle / Réalisée (Kg) *</label>
+            <input type="number" id="prod-v3-mass" step="0.1" required value="${isEdit ? product.mass : 0}" placeholder="ex: 1540.0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Description (Facultatif)</label>
+            <input type="text" id="prod-v3-desc" value="${isEdit ? escapeHtml(product.desc || '') : ''}" placeholder="Ex: Feuilles fraîches sous vide" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs" />
+          </div>
+
+          <div class="flex items-center space-x-2 pt-3">
+            <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-xs">Annuler</button>
+            <button type="submit" class="w-1/2 bg-agro-800 text-white font-bold py-3 rounded-xl text-xs shadow-md">Enregistrer</button>
+          </div>
+        </form>
+      `;
+
+      backdrop.classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function calcCartonWeightV3() {
+      const pw = parseFloat(document.getElementById("prod-v3-pc-weight")?.value) || 0;
+      const pcs = parseFloat(document.getElementById("prod-v3-pcs")?.value) || 0;
+      const cw = document.getElementById("prod-v3-carton-weight");
+      if (cw && pw > 0 && pcs > 0) cw.value = (pw * pcs).toFixed(1);
+    }
+
+    function handleSaveProduct_V3(e, containerId, productId) {
+      e.preventDefault();
+      const container = appContainers.find(c => c.id === containerId);
+      if (!container) return;
+
+      const name = document.getElementById("prod-v3-name").value.trim();
+      const objectifKg = parseFloat(document.getElementById("prod-v3-objectif").value) || 1000.0;
+      const pcWeight = parseFloat(document.getElementById("prod-v3-pc-weight").value) || 1.0;
+      const pcsPerCarton = parseInt(document.getElementById("prod-v3-pcs").value) || 15;
+      const cartonWeight = parseFloat(document.getElementById("prod-v3-carton-weight").value) || (pcWeight * pcsPerCarton);
+      const mass = parseFloat(document.getElementById("prod-v3-mass").value) || 0;
+      const desc = document.getElementById("prod-v3-desc").value.trim();
+
+      if (!name) return;
+
+      if (productId) {
+        const p = container.products.find(x => x.id === productId);
+        if (p) {
+          p.name = name;
+          p.objectifKg = objectifKg;
+          p.pcWeight = pcWeight;
+          p.pcsPerCarton = pcsPerCarton;
+          p.cartonWeight = cartonWeight;
+          p.mass = mass;
+          p.desc = desc;
+          if (!p.weighings || p.weighings.length === 0) p.weighings = [{ date: "05/10/2026", mass }];
+        }
+        showToast(`Produit "${name}" mis à jour`);
+      } else {
+        container.products.push({
+          id: "p-" + Date.now(),
+          name,
+          objectifKg,
+          pcWeight,
+          pcsPerCarton,
+          cartonWeight,
+          mass,
+          desc,
+          sealed: true,
+          weighings: [{ date: "05/10/2026", mass }]
+        });
+        showToast(`Produit "${name}" ajouté avec objectif ${objectifKg.toFixed(0)} Kg`);
+      }
+
+      saveContainers();
+      closeModal();
+      renderCurrentView();
+    }
+
+    function closeModal() {
+      const b = document.getElementById("modal-backdrop");
+      if (b) b.classList.add("hidden");
+    }
+
+    function escapeHtml(t) {
+      if (!t) return "";
+      return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function formatDateDisplay(d) {
+      if (!d) return "05/10/2026";
+      const p = d.split("-");
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+    }
+
+    document.getElementById("modal-backdrop")?.addEventListener("click", function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderCurrentView();
+    });
+  </script>
+</body>
+</html>

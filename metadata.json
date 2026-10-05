@@ -1,0 +1,6 @@
+{
+  "name": "ProdSuivi PRO",
+  "description": "ProdSuivi PRO V3 - Agro-Logistique Alimentaire. Suivi avec tonnage de départ/objectif client, indicateurs intelligents de couleur et rapports PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
