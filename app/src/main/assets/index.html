@@ -18,7 +18,7 @@
     }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -28,6 +28,74 @@
   </style>
 </head>
 <body class="h-full text-slate-800 flex flex-col bg-slate-100 overflow-x-hidden">
+
+  <!-- ======================================================== -->
+  <!-- 1. ÉCRAN DE VERROUILLAGE PLEIN ÉCRAN (LICENCE D'ACTIVATION) -->
+  <!-- ======================================================== -->
+  <div id="lockScreen" style="position:fixed; inset:0; z-index:99999; background:#052e16; display:none;" class="flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 sm:p-7 text-center relative border border-emerald-950/20">
+      <!-- Icone / Emblème -->
+      <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto mb-4 border border-emerald-200 shadow-inner">
+        <i data-lucide="shield-check" class="w-8 h-8 text-[#166534]"></i>
+      </div>
+      
+      <!-- Titre et sous-titre obligatoires -->
+      <h2 class="text-xl font-black text-slate-900 mb-1.5 flex items-center justify-center space-x-1.5">
+        <span>🔒</span>
+        <span>Activation ProdSuivi PRO</span>
+      </h2>
+      
+      <p class="text-xs text-slate-600 mb-5 leading-relaxed font-medium">
+        Appareil non activé. Contactez AUDRIAN Ronis - Douala Export
+      </p>
+
+      <!-- Formulaire de Licence Unique -->
+      <form onsubmit="event.preventDefault(); verifierLicence();" class="space-y-4 text-left">
+        <div>
+          <label for="licence-input" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Clé de licence / Mot de passe
+          </label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="licence-input" 
+              placeholder="Entrez le mot de passe d'activation" 
+              class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium pr-10"
+              autocomplete="current-password"
+              required
+            />
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility('licence-input', 'toggle-pwd-icon')" 
+              class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
+              title="Afficher/Masquer le mot de passe"
+            >
+              <i data-lucide="eye" id="toggle-pwd-icon" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <!-- Message d'erreur rouge -->
+          <div id="license-error" class="hidden text-red-600 text-xs font-bold mt-2 flex items-center space-x-1.5">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
+            <span>Mot de passe incorrect</span>
+          </div>
+        </div>
+
+        <!-- Bouton vert d'activation -->
+        <button 
+          type="submit" 
+          class="w-full bg-[#166534] hover:bg-[#14532d] active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2"
+        >
+          <i data-lucide="key" class="w-4 h-4"></i>
+          <span>Activer l'application</span>
+        </button>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+        <span>AUDRIAN Ronis</span>
+        <span class="font-semibold text-emerald-800">Douala Export</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Header -->
   <header id="main-header" class="bg-agro-800 text-white shadow-md sticky top-0 z-40">
@@ -85,8 +153,58 @@
   </div>
 
   <script>
-    // Initial 19 items exactly reproducing user screenshots & specifications:
-    // Total Mass: 26478.0 Kg, Total Cartons: 1547.8, Total Objectif: 26000.0 Kg (101.8%)
+    // ==========================================
+    // LICENCE D'ACTIVATION UNIQUE OBLIGATOIRE
+    // ==========================================
+    const MOT_DE_PASSE_MAITRE = "Dianamavie1@";
+
+    function verifierLicence() {
+      const inputEl = document.getElementById("licence-input");
+      const errEl = document.getElementById("license-error");
+      const lockScreen = document.getElementById("lockScreen");
+      if (!inputEl) return;
+
+      const inputVal = inputEl.value.trim();
+      if (btoa(inputVal) === btoa(MOT_DE_PASSE_MAITRE)) {
+        localStorage.setItem('prodSuivi_activated', 'true');
+        if (lockScreen) lockScreen.style.display = 'none';
+        if (errEl) errEl.classList.add('hidden');
+        showToast("Licence activée avec succès !");
+      } else {
+        if (errEl) {
+          errEl.innerText = "Mot de passe incorrect";
+          errEl.classList.remove('hidden');
+        }
+      }
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        if (icon) icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
+
+    function checkActivationOnLoad() {
+      const lockScreen = document.getElementById("lockScreen");
+      if (!lockScreen) return;
+      if (localStorage.getItem('prodSuivi_activated') !== 'true') {
+        lockScreen.style.display = 'flex';
+      } else {
+        lockScreen.style.display = 'none';
+      }
+    }
+
+    // ==========================================
+    // 20 ALIMENTS EXACTS : TONNAGE 26.978 T (26978.0 Kg), OBJECTIF 28000 Kg (96.4%), 1572.8 CARTONS
+    // ==========================================
     const INITIAL_PRODUCTS_V3 = [
       { id: "p1", name: "Water Leaves", mass: 1540.0, objectifKg: 1500.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Feuilles fraîches lavées et essorées", sealed: true, weighings: [{ date: "05/10/2026", mass: 885.0 }, { date: "05/10/2026", mass: 655.0 }] },
       { id: "p2", name: "Ndolè", mass: 2200.0, objectifKg: 1800.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Ndolè lavé pressé sous vide", sealed: true, weighings: [{ date: "05/10/2026", mass: 1200.0 }, { date: "05/10/2026", mass: 1000.0 }] },
@@ -106,7 +224,8 @@
       { id: "p16", name: "Egusi", mass: 800.0, objectifKg: 800.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Graines de courge décortiquées", sealed: true, weighings: [{ date: "05/10/2026", mass: 400.0 }, { date: "05/10/2026", mass: 400.0 }] },
       { id: "p17", name: "Koki", mass: 750.0, objectifKg: 1000.0, cartonWeight: 15.0, pcsPerCarton: 15, pcWeight: 1.0, desc: "Niébé blanc prêt à cuire", sealed: true, weighings: [{ date: "05/10/2026", mass: 400.0 }, { date: "05/10/2026", mass: 350.0 }] },
       { id: "p18", name: "Feuilles de Manioc", mass: 2228.0, objectifKg: 1800.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Pilage fin pour Kwem traditionnel", sealed: true, weighings: [{ date: "05/10/2026", mass: 1114.0 }, { date: "05/10/2026", mass: 1114.0 }] },
-      { id: "p19", name: "Ndjansang & Épices", mass: 2860.0, objectifKg: 2600.0, cartonWeight: 25.0, pcsPerCarton: 25, pcWeight: 1.0, desc: "Épices et graines nobles aromatiques", sealed: true, weighings: [{ date: "05/10/2026", mass: 1430.0 }, { date: "05/10/2026", mass: 1430.0 }] }
+      { id: "p19", name: "Ndjansang & Épices", mass: 2860.0, objectifKg: 2600.0, cartonWeight: 25.0, pcsPerCarton: 25, pcWeight: 1.0, desc: "Épices et graines nobles aromatiques", sealed: true, weighings: [{ date: "05/10/2026", mass: 1430.0 }, { date: "05/10/2026", mass: 1430.0 }] },
+      { id: "p20", name: "Gingembre Frais & Aromates", mass: 500.0, objectifKg: 2000.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Gingembre noble sélection exportation", sealed: true, weighings: [{ date: "05/10/2026", mass: 250.0 }, { date: "05/10/2026", mass: 250.0 }] }
     ];
 
     const DEFAULT_USERS = [
@@ -170,7 +289,6 @@
           if (u && u.phone) return u;
         }
       } catch (e) {}
-      // Default to logged-in user AUDRIAN Ronis
       return DEFAULT_USERS[0];
     }
 
@@ -187,7 +305,13 @@
         const s = localStorage.getItem("prodsuivi_containers_v3");
         if (s) {
           const parsed = JSON.parse(s);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Guarantee 20 items and 26.978 T if older 19 items stored
+            if (parsed[0] && parsed[0].products && parsed[0].products.length === 19) {
+              parsed[0].products = INITIAL_PRODUCTS_V3;
+            }
+            return parsed;
+          }
         }
       } catch (e) {}
       return DEFAULT_CONTAINERS;
@@ -329,7 +453,7 @@
                 <div class="pt-3 border-t border-slate-100">
                   <button type="button" onclick="quickLoginDemo()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center space-x-2 border border-emerald-200">
                     <i data-lucide="user-check" class="w-4 h-4"></i>
-                    <span>Connexion Rapide (AUDRIAN Ronis - Démo)</span>
+                    <span>Connexion Rapide (AUDRIAN Ronis)</span>
                   </button>
                 </div>
               </form>
@@ -454,7 +578,9 @@
       return appContainers.filter(c => c.producerPhone === currentAuthUser.phone || !c.producerPhone);
     }
 
-    // 1. DASHBOARD
+    // ==========================================
+    // 1. DASHBOARD : 26.978 T, 20 ALIMENTS, 28000 Kg OBJ (96.4%)
+    // ==========================================
     function renderDashboard(host) {
       const userContainers = getUserContainers();
       let totalKg = 0, totalObjKg = 0, totalCartons = 0;
@@ -567,7 +693,9 @@
       `;
     }
 
-    // 2. CONTAINERS LIST
+    // ==========================================
+    // 2. LISTE DES CONTENEURS
+    // ==========================================
     function renderContainerList(host) {
       const list = getUserContainers().filter(c => {
         if (!containerSearchQuery.trim()) return true;
@@ -658,7 +786,9 @@
       }
     }
 
-    // 3. CONTAINER DETAIL (V3 WITH COLOR LOGIC & SORTING)
+    // ==========================================
+    // 3. CONTAINER DETAIL (V3 : COULEURS INTELLIGENTES ET TRI)
+    // ==========================================
     function renderContainerDetail(host) {
       const container = appContainers.find(c => c.id === currentContainerId);
       if (!container) { navigateTo('containers'); return; }
@@ -680,7 +810,7 @@
         productsWithProg = productsWithProg.filter(p => p.name.toLowerCase().includes(q));
       }
 
-      // Sort non-completed on top, completed at bottom
+      // Tri automatique : non terminés en haut, terminés (verts) en bas
       productsWithProg.sort((a, b) => {
         if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
         return a.progression - b.progression;
@@ -698,162 +828,168 @@
                 <div class="text-[11px] text-agro-200">Produit par : ${escapeHtml(container.producerName || currentAuthUser.name)}</div>
               </div>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleContainerLock('${container.id}')" class="w-8 h-8 rounded-xl ${container.closed ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'} flex items-center justify-center">
-                  <i data-lucide="${container.closed ? 'lock' : 'unlock'}" class="w-4 h-4"></i>
+                <button onclick="toggleContainerLock('${container.id}')" title="Verrouillage" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                  <i data-lucide="${container.closed ? 'lock' : 'unlock'}" class="w-4 h-4 text-white"></i>
                 </button>
-                <button onclick="generateContainerPDF_V3('${container.id}')" title="Générer PDF V3" class="w-8 h-8 rounded-xl bg-white/15 text-white flex items-center justify-center">
-                  <i data-lucide="share-2" class="w-4 h-4"></i>
+                <button onclick="generateContainerPDF_V3('${container.id}')" title="Export PDF" class="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+                  <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
                 </button>
               </div>
             </div>
 
-            <div class="p-3 rounded-2xl ${container.closed ? 'bg-red-950/40 border border-red-500/30' : 'bg-emerald-950/40 border border-emerald-500/30'} flex items-center justify-between mb-3">
-              <div class="flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full ${container.closed ? 'bg-red-400' : 'bg-emerald-400 animate-ping'}"></span>
-                <span class="text-xs font-bold uppercase tracking-wider ${container.closed ? 'text-red-200' : 'text-emerald-200'}">
-                  ${container.closed ? 'DOSSIER CLÔTURÉ - Fermé' : 'SUIVI DE CHARGEMENT ACTIF - Ouvert'}
+            <!-- Carte Statut Chargement -->
+            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/15">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs uppercase font-bold tracking-wider ${container.closed ? 'text-red-300' : 'text-emerald-300'}">
+                  ${container.closed ? '● DOSSIER CLÔTURÉ' : '● SUIVI DE CHARGEMENT ACTIF'}
+                </span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${container.closed ? 'bg-red-500/20 text-red-200' : 'bg-emerald-500/20 text-emerald-200'}">
+                  ${container.closed ? 'Fermé' : 'Ouvert'}
                 </span>
               </div>
-              <span class="text-xs font-black px-2 py-0.5 rounded-md bg-white/15 text-white">
-                Remplissage: ${stats.fillRate.toFixed(1)}%
-              </span>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 bg-white/10 rounded-2xl p-3 border border-white/10 text-center">
-              <div>
-                <div class="text-[10px] text-agro-200 uppercase font-semibold">Tonnage Total</div>
-                <div class="text-sm font-extrabold text-white mt-0.5">${stats.totalTonnes.toFixed(3)} T</div>
-                <div class="text-[10px] text-agro-300">Obj: ${stats.totalObjTonnes.toFixed(3)} T</div>
-              </div>
-              <div>
-                <div class="text-[10px] text-agro-200 uppercase font-semibold">Total Cartons</div>
-                <div class="text-sm font-extrabold text-white mt-0.5">${stats.totalCartons.toFixed(1)}</div>
-                <div class="text-[10px] text-agro-300">Cartons export</div>
-              </div>
-              <div>
-                <div class="text-[10px] text-agro-200 uppercase font-semibold">Éléments</div>
-                <div class="text-sm font-extrabold text-white mt-0.5">${stats.itemsCount}</div>
-                <div class="text-[10px] text-agro-300">Aliments saisis</div>
+              <div class="grid grid-cols-3 gap-2 text-center pt-1 border-t border-white/10">
+                <div>
+                  <div class="text-[10px] text-agro-200">Tonnage Réalisé</div>
+                  <div class="text-xs font-black text-white mt-0.5">${stats.totalTonnes.toFixed(3)} T</div>
+                  <div class="text-[9px] text-agro-300">(${stats.totalKg.toFixed(1)} Kg)</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-agro-200">Total Cartons</div>
+                  <div class="text-xs font-black text-amber-300 mt-0.5">${stats.totalCartons.toFixed(1)} Ctn</div>
+                  <div class="text-[9px] text-agro-300">Remplissage: ${stats.fillRate.toFixed(1)}%</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-agro-200">Éléments</div>
+                  <div class="text-xs font-black text-white mt-0.5">${stats.itemsCount}</div>
+                  <div class="text-[9px] text-agro-300">Obj: ${(stats.totalObjKg/1000).toFixed(2)} T</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="px-4 space-y-3">
+          <div class="px-4 space-y-3 pb-8">
             <div class="flex items-center justify-between">
-              <h3 class="text-sm font-extrabold text-slate-800 flex items-center space-x-1.5">
-                <i data-lucide="layers" class="w-4 h-4 text-agro-700"></i>
-                <span>Éléments et Produits (${container.products.length})</span>
-              </h3>
-              <button onclick="generateContainerPDF_V3('${container.id}')" class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-[11px] font-bold text-agro-800 shadow-sm flex items-center space-x-1 hover:bg-agro-50">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 text-agro-700"></i>
-                <span>PDF Pro V3</span>
-              </button>
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-900">Éléments et Produits</h3>
+                <p class="text-[11px] text-slate-400">Objectifs & progression visuelle en temps réel</p>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <button onclick="generateContainerPDF_V3('${container.id}')" class="px-2.5 py-1.5 bg-agro-700 hover:bg-agro-800 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                  <span>Rapport PDF</span>
+                </button>
+              </div>
             </div>
 
+            <!-- Barre de recherche produits -->
             <div class="relative">
               <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
               <input 
                 type="text" 
                 value="${escapeHtml(productSearchQuery)}"
                 oninput="productSearchQuery = this.value; renderCurrentView();"
-                placeholder="Filtrer un aliment (ex: Ndolè, Bobolo...)" 
-                class="w-full bg-white border border-slate-200 pl-9 pr-3 py-2 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agro-500 shadow-sm"
+                placeholder="Filtrer un aliment (Ndolé, Bobolo, Ugu...)" 
+                class="w-full bg-white border border-slate-200 pl-9 pr-3 py-2 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-agro-500 shadow-sm"
               />
             </div>
 
-            <div class="space-y-2.5">
-              ${productsWithProg.map(p => {
-                const pct = p.progression;
-                let cardStyle = "bg-[#f1f5f9] border border-slate-200";
-                let badgeStyle = "bg-slate-200 text-slate-700";
-                let badgeText = `En cours ${pct.toFixed(0)}%`;
-                let barColor = "bg-slate-400";
-                let isComplete = false;
+            <!-- Liste des produits avec logique de couleur stricte -->
+            <div class="space-y-3">
+              ${productsWithProg.length === 0 ? `
+                <div class="bg-white rounded-2xl p-6 text-center text-slate-400 text-xs border border-slate-100">
+                  Aucun aliment trouvé. Cliquez sur "+ Ajouter un produit".
+                </div>
+              ` : productsWithProg.map(p => {
+                let cardBg = "#f1f5f9";
+                let cardBorder = "#cbd5e1";
+                let badgeClass = "bg-slate-200 text-slate-700";
+                let badgeText = `En cours ${p.progression.toFixed(0)}%`;
+                let iconHtml = `<i data-lucide="clock" class="w-3.5 h-3.5 mr-1"></i>`;
+                let titleStyle = "text-slate-900";
 
-                if (pct >= 100) {
-                  cardStyle = "bg-[#dcfce7] border-2 border-[#16a34a] shadow-sm";
-                  badgeStyle = "bg-emerald-600 text-white font-bold";
-                  badgeText = `Objectif atteint ${pct.toFixed(0)}%`;
-                  barColor = "bg-[#16a34a]";
-                  isComplete = true;
-                } else if (pct >= 80) {
-                  cardStyle = "bg-[#fff7ed] border border-orange-300";
-                  badgeStyle = "bg-orange-100 text-orange-800 font-bold border border-orange-200";
-                  badgeText = `Presque fini ${pct.toFixed(0)}%`;
-                  barColor = "bg-orange-500";
+                if (p.progression >= 100) {
+                  cardBg = "#dcfce7";
+                  cardBorder = "#16a34a";
+                  badgeClass = "bg-emerald-600 text-white font-bold";
+                  badgeText = `Objectif atteint 100%`;
+                  iconHtml = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i>`;
+                  titleStyle = "text-emerald-950 line-through decoration-emerald-600/60";
+                } else if (p.progression >= 80) {
+                  cardBg = "#fff7ed";
+                  cardBorder = "#f97316";
+                  badgeClass = "bg-orange-100 text-orange-800 border border-orange-300";
+                  badgeText = `Presque fini ${p.progression.toFixed(0)}%`;
+                  iconHtml = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1"></i>`;
                 }
 
-                const clampedBar = Math.min(100, Math.max(0, pct));
-                const ecartKg = p.mass - p.obj;
-                const ecartStr = ecartKg >= 0 ? `+${ecartKg.toFixed(1)} Kg` : `${ecartKg.toFixed(1)} Kg`;
+                const barWidth = Math.min(100, Math.max(0, p.progression));
+                const barColor = p.progression >= 100 ? 'bg-emerald-600' : (p.progression >= 80 ? 'bg-orange-500' : 'bg-slate-500');
 
                 return `
-                  <div class="rounded-2xl p-3.5 transition-all ${cardStyle}">
+                  <div style="background-color: ${cardBg}; border: 1.5px solid ${cardBorder};" class="rounded-2xl p-3.5 shadow-sm transition-all">
                     <div class="flex items-start justify-between">
                       <div class="flex-1 cursor-pointer" onclick="navigateTo('product-detail', '${container.id}', '${p.id}')">
                         <div class="flex items-center space-x-2">
-                          <span class="font-extrabold text-sm ${isComplete ? 'text-emerald-950 font-black' : 'text-slate-900'}">
-                            ${isComplete ? '✅ ' : ''}${escapeHtml(p.name)}
-                          </span>
-                          <span class="px-2 py-0.5 text-[9px] rounded-full uppercase ${badgeStyle}">
-                            ${badgeText}
+                          <h4 class="font-extrabold text-sm ${titleStyle}">${escapeHtml(p.name)}</h4>
+                          <span class="px-2 py-0.5 text-[9px] rounded-full flex items-center font-bold ${badgeClass}">
+                            ${iconHtml}
+                            <span>${badgeText}</span>
                           </span>
                         </div>
-
-                        <div class="text-xs text-slate-800 font-semibold mt-1">
-                          Masse: <span class="font-bold text-slate-900">${p.mass.toFixed(1)} Kg</span> / Objectif: <span class="font-bold text-slate-900">${p.obj.toFixed(0)} Kg</span> 
-                          <span class="text-slate-500 font-normal">(${(p.mass/1000).toFixed(2)} T)</span>
-                          <span class="mx-1 text-slate-300">•</span>
-                          Cartons: <span class="font-extrabold text-amber-700">${p.cartons.toFixed(1)}</span>
+                        
+                        <div class="mt-1 text-xs font-bold text-slate-800">
+                          Masse: <span class="text-agro-800">${p.mass.toFixed(1)} Kg</span> / Objectif: <span class="text-slate-600">${p.obj.toFixed(0)} Kg</span>
+                          <span class="text-slate-400 font-normal ml-1">(${(p.mass/1000).toFixed(2)} T)</span>
+                          <span class="text-amber-600 ml-2">Cartons: ${p.cartons.toFixed(1)}</span>
                         </div>
 
-                        <div class="text-[11px] text-slate-500 mt-0.5 flex items-center space-x-2">
-                          <span>Config: ${p.pcsPerCarton} pces/ctn • ${p.ctnW.toFixed(1)} Kg</span>
-                          <span>•</span>
-                          <span class="${ecartKg >= 0 ? 'text-emerald-700 font-bold' : 'text-orange-700 font-bold'}">Écart: ${ecartStr}</span>
+                        <!-- Barre de progression fine (0 à 100%) -->
+                        <div class="w-full bg-slate-200/80 h-1.5 rounded-full mt-2 overflow-hidden">
+                          <div class="${barColor} h-full rounded-full transition-all duration-300" style="width: ${barWidth}%;"></div>
+                        </div>
+
+                        <div class="flex items-center space-x-2 text-[11px] text-slate-500 mt-2 font-medium">
+                          <span>Config: ${p.pcsPerCarton} pces/ctn • ${p.cartonWeight.toFixed(1)} Kg</span>
+                          ${p.sealed ? `<span class="text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded text-[10px] font-semibold">Scellé</span>` : ''}
                         </div>
                       </div>
 
+                      <!-- 3 Boutons à droite : Edit, Delete, > pour détail -->
                       <div class="flex items-center space-x-1 ml-2">
-                        <button onclick="openEditProductModal('${container.id}', '${p.id}')" title="Modifier" class="w-7 h-7 rounded-lg bg-white/70 hover:bg-white text-emerald-800 flex items-center justify-center">
-                          <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        <button onclick="openEditProductModal('${container.id}', '${p.id}')" title="Modifier" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center border border-slate-200 shadow-xs">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                         </button>
-                        <button onclick="deleteProduct('${container.id}', '${p.id}')" title="Supprimer" class="w-7 h-7 rounded-lg bg-white/70 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center">
+                        <button onclick="deleteProduct('${container.id}', '${p.id}')" title="Supprimer" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-red-100 text-red-600 flex items-center justify-center border border-slate-200 shadow-xs">
                           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         </button>
-                        <button onclick="navigateTo('product-detail', '${container.id}', '${p.id}')" title="Pesées" class="w-7 h-7 rounded-lg bg-white/80 hover:bg-white text-slate-700 flex items-center justify-center">
+                        <button onclick="navigateTo('product-detail', '${container.id}', '${p.id}')" title="Détail pesées" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-slate-200 text-slate-700 flex items-center justify-center border border-slate-200 shadow-xs">
                           <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                       </div>
-                    </div>
-
-                    <div class="w-full bg-slate-200/80 rounded-full h-1.5 mt-2.5 overflow-hidden">
-                      <div class="h-1.5 rounded-full ${barColor}" style="width: ${clampedBar}%"></div>
                     </div>
                   </div>
                 `;
               }).join('')}
             </div>
           </div>
-        </div>
 
-        <div class="fixed bottom-14 left-0 right-0 p-3 bg-white/90 backdrop-blur-md border-t border-slate-200 z-30 max-w-md mx-auto">
-          <button 
-            onclick="openAddProductModal('${container.id}')"
-            ${container.closed ? 'disabled' : ''}
-            class="w-full ${container.closed ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-agro-800 hover:bg-agro-900 active:scale-[0.99] text-white shadow-md'} font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center space-x-2 transition-all">
-            <i data-lucide="${container.closed ? 'lock' : 'plus'}" class="w-5 h-5"></i>
-            <span>${container.closed ? 'Dossier clôturé (Modification bloquée)' : '+ Ajouter un produit'}</span>
-          </button>
+          <!-- Bouton fixe en bas "+ Ajouter un produit" -->
+          <div class="fixed bottom-16 left-0 right-0 p-3 max-w-md mx-auto z-30">
+            <button onclick="openAddProductModal('${container.id}')" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-2xl shadow-xl flex items-center justify-center space-x-2 border border-white/20 transition-all">
+              <i data-lucide="plus-circle" class="w-5 h-5"></i>
+              <span class="text-sm font-semibold">+ Ajouter un produit</span>
+            </button>
+          </div>
         </div>
       `;
     }
 
     function deleteProduct(containerId, productId) {
       const container = appContainers.find(c => c.id === containerId);
-      if (!container || container.closed) { showToast("Modification impossible"); return; }
+      if (!container) return;
+      if (container.closed) { showToast("Conteneur clôturé"); return; }
       const prod = container.products.find(p => p.id === productId);
-      if (prod && confirm(`Supprimer "${prod.name}" ?`)) {
+      if (prod && confirm(`Supprimer le produit "${prod.name}" ?`)) {
         container.products = container.products.filter(p => p.id !== productId);
         saveContainers();
         showToast("Produit supprimé");
@@ -861,140 +997,137 @@
       }
     }
 
-    // 4. PRODUCT DETAIL
+    // ==========================================
+    // 4. DETAIL PRODUIT : CHRONOLOGIE DES PESÉES
+    // ==========================================
     function renderProductDetail(host) {
       const container = appContainers.find(c => c.id === currentContainerId);
       if (!container) { navigateTo('containers'); return; }
       const product = container.products.find(p => p.id === currentProductId);
       if (!product) { navigateTo('container-detail', currentContainerId); return; }
 
-      if (!product.weighings) product.weighings = [{ date: "05/10/2026", mass: product.mass || 0 }];
-      const totalKg = product.weighings.reduce((acc, w) => acc + (parseFloat(w.mass) || 0), 0);
-      product.mass = totalKg;
-
-      const objKg = parseFloat(product.objectifKg) || totalKg || 1;
-      const ctnWeight = parseFloat(product.cartonWeight) || 1;
-      const totalCartons = totalKg / ctnWeight;
-      const progression = (totalKg / objKg) * 100;
-      const ecartKg = totalKg - objKg;
-
-      let colorTag = "bg-slate-100 border-slate-300 text-slate-800";
-      let tagText = `En cours (${progression.toFixed(0)}%)`;
-      if (progression >= 100) {
-        colorTag = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
-        tagText = `✅ Objectif atteint (${progression.toFixed(0)}%)`;
-      } else if (progression >= 80) {
-        colorTag = "bg-orange-100 border-orange-400 text-orange-900 font-bold";
-        tagText = `Presque fini (${progression.toFixed(0)}%)`;
-      }
+      const weighings = product.weighings || [];
+      const totalKg = weighings.reduce((sum, w) => sum + (parseFloat(w.mass) || 0), 0);
+      const ctnW = parseFloat(product.cartonWeight) || 1;
+      const totalCartons = totalKg / ctnW;
+      const obj = parseFloat(product.objectifKg) || 1000;
+      const prog = (totalKg / obj) * 100;
+      const isCompleted = totalKg >= obj;
 
       host.innerHTML = `
-        <div class="space-y-4">
+        <div class="space-y-4 pb-28">
           <div class="bg-agro-800 text-white px-4 py-4 rounded-b-3xl shadow-md">
-            <div class="flex items-center space-x-3 mb-2">
+            <div class="flex items-center justify-between mb-3">
               <button onclick="navigateTo('container-detail', '${container.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
                 <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
               </button>
-              <div class="flex-1 truncate">
-                <span class="text-[10px] text-agro-200 uppercase font-semibold">${escapeHtml(container.name)}</span>
-                <h2 class="text-base font-extrabold tracking-tight truncate">${escapeHtml(product.name)}</h2>
+              <div class="text-center px-2 flex-1">
+                <h2 class="font-extrabold text-base tracking-tight">${escapeHtml(product.name)}</h2>
+                <div class="text-[11px] text-agro-200">${escapeHtml(container.name)}</div>
               </div>
               <button onclick="openEditProductModal('${container.id}', '${product.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                <i data-lucide="sliders" class="w-4 h-4 text-white"></i>
+                <i data-lucide="edit-3" class="w-4 h-4 text-white"></i>
               </button>
             </div>
-            <p class="text-xs text-agro-100 px-1">${escapeHtml(product.desc || 'Récolte alimentaire locale')}</p>
+
+            <!-- Progression & Statut Objectif -->
+            <div class="bg-white/10 rounded-2xl p-3 border border-white/15">
+              <div class="flex items-center justify-between text-xs font-bold mb-1">
+                <span>Objectif de départ : ${obj.toFixed(0)} Kg</span>
+                <span class="${isCompleted ? 'text-emerald-300' : 'text-amber-300'}">${prog.toFixed(1)}% ${isCompleted ? '✅ ATTEINT' : 'EN COURS'}</span>
+              </div>
+              <div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+                <div class="${isCompleted ? 'bg-emerald-400' : 'bg-amber-400'} h-full rounded-full" style="width: ${Math.min(100, prog)}%;"></div>
+              </div>
+            </div>
           </div>
 
           <div class="px-4 space-y-4">
+            <!-- Carte "Données d'emballage du produit" -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                <i data-lucide="package-search" class="w-4 h-4 text-agro-700"></i>
+                <span>Données d'emballage du produit</span>
+              </h3>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-slate-50 rounded-xl p-2.5">
+                  <div class="text-[10px] text-slate-400 font-semibold">Poids unitaire</div>
+                  <div class="text-sm font-extrabold text-slate-800">${parseFloat(product.pcWeight || 1).toFixed(1)} Kg</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-2.5">
+                  <div class="text-[10px] text-slate-400 font-semibold">Quantité/Carton</div>
+                  <div class="text-sm font-extrabold text-slate-800">${product.pcsPerCarton || 20} pces</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-2.5">
+                  <div class="text-[10px] text-slate-400 font-semibold">Poids d'un carton</div>
+                  <div class="text-sm font-extrabold text-agro-800">${parseFloat(product.cartonWeight || 20).toFixed(1)} Kg</div>
+                </div>
+              </div>
+              ${product.desc ? `<p class="text-xs text-slate-500 italic mt-1">${escapeHtml(product.desc)}</p>` : ''}
+            </div>
+
+            <!-- Section "Chronologie des pesées" -->
             <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase text-slate-400">Objectif & Emballage</span>
-                <span class="px-2 py-0.5 text-xs rounded-full border ${colorTag}">${tagText}</span>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                  <i data-lucide="scale" class="w-4 h-4 text-agro-700"></i>
+                  <span>Chronologie des pesées (${weighings.length})</span>
+                </h3>
               </div>
-
-              <div class="grid grid-cols-4 gap-2 text-center pt-1">
-                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
-                  <div class="text-[9px] text-slate-400 font-semibold">Objectif</div>
-                  <div class="text-xs font-black text-slate-900 mt-0.5">${objKg.toFixed(0)} Kg</div>
-                </div>
-                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
-                  <div class="text-[9px] text-slate-400 font-semibold">Poids pièce</div>
-                  <div class="text-xs font-bold text-slate-800 mt-0.5">${(parseFloat(product.pcWeight)||1).toFixed(1)} Kg</div>
-                </div>
-                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
-                  <div class="text-[9px] text-slate-400 font-semibold">Qté / ctn</div>
-                  <div class="text-xs font-bold text-slate-800 mt-0.5">${product.pcsPerCarton} pcs</div>
-                </div>
-                <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
-                  <div class="text-[9px] text-slate-400 font-semibold">Poids ctn</div>
-                  <div class="text-xs font-black text-agro-800 mt-0.5">${ctnWeight.toFixed(1)} Kg</div>
-                </div>
-              </div>
-
-              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="h-2 rounded-full ${progression >= 100 ? 'bg-[#16a34a]' : (progression >= 80 ? 'bg-orange-500' : 'bg-slate-400')}" style="width: ${Math.min(100, progression)}%"></div>
-              </div>
-            </div>
-
-            <div class="space-y-3">
-              <h3 class="text-sm font-extrabold text-slate-800 flex items-center space-x-1.5">
-                <i data-lucide="history" class="w-4 h-4 text-agro-700"></i>
-                <span>Chronologie des pesées (${product.weighings.length})</span>
-              </h3>
 
               <div class="space-y-2">
-                ${product.weighings.map((w, idx) => {
-                  const wMass = parseFloat(w.mass) || 0;
-                  const wCartons = wMass / ctnWeight;
-                  return `
-                    <div class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex items-center justify-between">
-                      <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-xl bg-agro-50 text-agro-800 flex items-center justify-center font-bold text-xs">#${idx + 1}</div>
-                        <div>
-                          <div class="text-xs font-extrabold text-slate-900">${wMass.toFixed(1)} Kg enregistrés</div>
-                          <div class="text-[11px] text-slate-400">Date: ${w.date || '05/10/2026'} • ${wCartons.toFixed(1)} cartons</div>
-                        </div>
-                      </div>
-                      <div class="flex items-center space-x-1">
-                        <button onclick="editWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="deleteWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg bg-slate-50 text-slate-400 hover:text-red-500 flex items-center justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                ${weighings.length === 0 ? `
+                  <div class="text-center py-4 text-xs text-slate-400">Aucune pesée enregistrée.</div>
+                ` : weighings.map((w, idx) => `
+                  <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">
+                        #${idx + 1}
+                      </span>
+                      <div>
+                        <div class="text-xs font-bold text-slate-800">${parseFloat(w.mass).toFixed(1)} Kg</div>
+                        <div class="text-[10px] text-slate-400">Date: ${w.date || '05/10/2026'}</div>
                       </div>
                     </div>
-                  `;
-                }).join('')}
+                    <div class="flex items-center space-x-1">
+                      <button onclick="editWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg text-emerald-700 hover:bg-emerald-50 flex items-center justify-center">
+                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <button onclick="deleteWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center">
+                        <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Footer avec TOTAL KILOS et TOTAL CARTONS -->
+              <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center">
+                <div class="bg-emerald-50 rounded-xl p-2.5">
+                  <div class="text-[10px] uppercase font-bold text-emerald-800">TOTAL KILOS</div>
+                  <div class="text-base font-extrabold text-emerald-950">${totalKg.toFixed(1)} Kg</div>
+                  <div class="text-[10px] text-emerald-700">(${(totalKg/1000).toFixed(3)} Tonnes)</div>
+                </div>
+                <div class="bg-amber-50 rounded-xl p-2.5">
+                  <div class="text-[10px] uppercase font-bold text-amber-800">TOTAL CARTONS</div>
+                  <div class="text-base font-extrabold text-amber-950">${totalCartons.toFixed(1)} Ctn</div>
+                  <div class="text-[10px] text-amber-700">Standard ${product.cartonWeight} Kg</div>
+                </div>
               </div>
             </div>
 
-            <div class="bg-gradient-to-r from-agro-800 to-agro-900 text-white rounded-2xl p-4 shadow-md flex items-center justify-between">
-              <div>
-                <span class="text-[10px] text-agro-200 uppercase font-semibold">TOTAL RÉALISÉ</span>
-                <div class="text-lg font-black text-white">${totalKg.toFixed(1)} Kg</div>
-                <div class="text-[11px] text-emerald-300">Écart: ${ecartKg >= 0 ? '+' : ''}${ecartKg.toFixed(1)} Kg</div>
-              </div>
-              <div class="text-right">
-                <span class="text-[10px] text-agro-200 uppercase font-semibold">TOTAL CARTONS</span>
-                <div class="text-lg font-black text-amber-300">${totalCartons.toFixed(1)} Ctn</div>
-                <div class="text-[11px] text-agro-200">${progression.toFixed(1)}% de l'objectif</div>
-              </div>
-            </div>
-
-            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
-              <h4 class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
-                <i data-lucide="plus-circle" class="w-4 h-4 text-agro-600"></i>
-                <span>Enregistrer une pesée (mise à jour auto)</span>
-              </h4>
+            <!-- Formulaire en bas : Date + Masse (Kg) + bouton + -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-md">
+              <h4 class="text-xs font-bold text-slate-700 mb-2">+ Enregistrer une nouvelle pesée</h4>
               <div class="grid grid-cols-12 gap-2">
                 <div class="col-span-5">
-                  <label class="text-[10px] text-slate-400 font-semibold uppercase">Date</label>
-                  <input type="date" id="new-weighing-date" value="2026-10-05" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+                  <input type="date" id="new-weighing-date" value="${new Date().toISOString().split('T')[0]}" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
                 </div>
                 <div class="col-span-5">
-                  <label class="text-[10px] text-slate-400 font-semibold uppercase">Masse (Kg)</label>
-                  <input type="number" id="new-weighing-mass" step="0.1" placeholder="ex: 885.0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold" />
+                  <input type="number" id="new-weighing-mass" step="0.1" placeholder="Masse en Kg" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800" />
                 </div>
-                <div class="col-span-2 flex items-end">
-                  <button onclick="addWeighing('${container.id}', '${product.id}')" ${container.closed ? 'disabled' : ''} class="w-full h-9 bg-agro-800 text-white rounded-xl flex items-center justify-center shadow-sm">
+                <div class="col-span-2">
+                  <button onclick="addWeighing('${container.id}', '${product.id}')" class="w-full h-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white rounded-xl flex items-center justify-center">
                     <i data-lucide="plus" class="w-5 h-5"></i>
                   </button>
                 </div>
@@ -1083,6 +1216,12 @@
             <h2 class="text-lg font-extrabold text-slate-900">${currentAuthUser.name}</h2>
             <div class="text-xs text-agro-700 font-semibold">${currentAuthUser.role || 'Superviseur Export'}</div>
 
+            <!-- Badge Licence Active -->
+            <div class="mt-2.5 inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full text-[11px] font-bold border border-emerald-200">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+              <span>Licence PRO Activée (Certifiée Douala Export)</span>
+            </div>
+
             <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-left text-xs">
               <div class="flex justify-between items-center">
                 <span class="text-slate-400 flex items-center space-x-1.5"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Téléphone :</span></span>
@@ -1118,7 +1257,7 @@
             </div>
           </div>
 
-          <!-- NOUVELLE SECTION REQUISE: TOUS LES CONTENEURS QU'IL A DÉJÀ PRODUITS -->
+          <!-- HISTORIQUE COMPLET : TOUS LES CONTENEURS PRODUITS PAR L'UTILISATEUR -->
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-extrabold text-slate-900 flex items-center space-x-1.5">
@@ -1183,11 +1322,11 @@
             </div>
           </div>
 
-          <!-- Account Switch & Logout -->
+          <!-- Actions Session -->
           <div class="space-y-2 pt-2">
             <button onclick="resetData()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-xs flex items-center justify-center space-x-2">
               <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-              <span>Réinitialiser conteneur démo COMACAM SUARL</span>
+              <span>Réinitialiser aux 20 aliments COMACAM SUARL</span>
             </button>
             <button onclick="handleLogout()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-md">
               <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -1199,16 +1338,16 @@
     }
 
     function resetData() {
-      if (confirm("Réinitialiser les conteneurs aux valeurs initiales COMACAM SUARL ?")) {
+      if (confirm("Réinitialiser les conteneurs aux 20 aliments originaux COMACAM SUARL (26.978 T) ?")) {
         appContainers = JSON.parse(JSON.stringify(DEFAULT_CONTAINERS));
         saveContainers();
-        showToast("Données réinitialisées");
+        showToast("Données 20 aliments réinitialisées");
         renderCurrentView();
       }
     }
 
     // ==========================================
-    // 6. GENERATION PDF V3 - AVEC OBJECTIF, ÉCART & 19 ÉLÉMENTS EXACTS
+    // 6. RAPPORT PDF PROFESSIONNEL V3
     // ==========================================
     function generateContainerPDF_V3(containerId) {
       const container = appContainers.find(c => c.id === containerId);
@@ -1252,6 +1391,7 @@
       const totalObjTonnes = totalObjKg / 1000.0;
       const fillRate = totalObjKg > 0 ? (totalKg / totalObjKg) * 100 : 0;
 
+      // Header Banner
       doc.setFillColor(22, 101, 52);
       doc.rect(0, 0, 210, 36, "F");
 
@@ -1346,7 +1486,7 @@
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "italic");
         doc.setTextColor(100, 116, 139);
-        doc.text("Document certifié avec concordance exacte des pesées (19 éléments). Mention: Document généré par ProdSuivi PRO V3 - Agro-Logistique Alimentaire", 14, finalY);
+        doc.text(`Document certifié avec concordance exacte des pesées (${container.products.length} éléments). Mention: ProdSuivi PRO V3`, 14, finalY);
 
         doc.setDrawColor(203, 213, 225);
         doc.roundedRect(14, finalY + 5, 80, 18, 1, 1, "D");
@@ -1376,7 +1516,7 @@
             </div>
             <div>
               <h3 class="font-extrabold text-sm text-slate-900">Rapport PDF V3 Généré</h3>
-              <p class="text-[11px] text-slate-400">19 éléments • Objectif: ${totalObjKg.toFixed(0)} Kg • Réalisé: ${totalKg.toFixed(1)} Kg (${fillRate.toFixed(1)}%)</p>
+              <p class="text-[11px] text-slate-400">${container.products.length} éléments • Objectif: ${totalObjKg.toFixed(0)} Kg • Réalisé: ${totalKg.toFixed(1)} Kg (${fillRate.toFixed(1)}%)</p>
             </div>
           </div>
           <button onclick="closeModal()" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
@@ -1661,6 +1801,9 @@
     });
 
     window.addEventListener("DOMContentLoaded", () => {
+      // 1. Activation License Check (Obligatoire)
+      checkActivationOnLoad();
+      // 2. Render view
       renderCurrentView();
     });
   </script>
