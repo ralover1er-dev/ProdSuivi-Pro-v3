@@ -18,28 +18,22 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
         with:
-          node-version: '20'
+          gradle-version: 8.6
 
-      - name: Create Android project from your HTML
+      - name: Generate gradlew and Build APK
         run: |
           ls -la
-          echo '{"name":"prod-suivi","type":"module"}' > package.json
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "ProdSuivi PRO V3" "com.comacam.prodsuivi.v3" --web-dir="." --npm-client npm || true
-          npx cap add android
-          npx cap copy android
-
-      - name: Build APK
-        run: |
-          cd android
-          chmod +x gradlew
+          gradle wrapper
+          chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ProdSuivi-PRO-V3-APK-Dianamavie
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            **/build/outputs/apk/debug/*.apk
