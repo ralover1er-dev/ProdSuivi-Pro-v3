@@ -23,11 +23,21 @@ jobs:
         with:
           gradle-version: 9.3.1
 
+      - name: Patch KSP for GitHub CI headless
+        run: |
+          echo "org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8 -Djava.awt.headless=true" >> gradle.properties
+          echo "ksp.incremental=false" >> gradle.properties
+          echo "org.gradle.daemon=false" >> gradle.properties
+          cat gradle.properties
+
       - name: Generate gradlew and Build APK
+        env:
+          JAVA_TOOL_OPTIONS: "-Djava.awt.headless=true"
+          GRADLE_OPTS: "-Djava.awt.headless=true"
         run: |
           gradle wrapper --gradle-version 9.3.1
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon -Djava.awt.headless=true --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -36,4 +46,3 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             **/build/outputs/apk/debug/*.apk
-            build/outputs/apk/debug/*.apk
