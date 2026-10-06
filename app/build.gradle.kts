@@ -18,7 +18,6 @@ android {
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
-
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
@@ -48,7 +47,6 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      // On laisse Android générer son debug.keystore tout seul sur GitHub
       isMinifyEnabled = false
     }
   }
@@ -93,3 +91,27 @@ dependencies {
   implementation(libs.androidx.room.runtime)
   implementation(libs.converter.moshi)
   implementation(libs.firebase.ai)
+  implementation(libs.firebase.appcheck.recaptcha)
+  implementation(libs.firebase.appcheck.debug)
+  implementation(libs.kotlinx.coroutines.android)
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.logging.interceptor)
+  implementation(libs.moshi.kotlin)
+  implementation(libs.okhttp)
+  implementation(libs.retrofit)
+  testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.core)
+  testImplementation(libs.androidx.junit)
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlinx.coroutines.test)
+  testImplementation(libs.robolectric)
+  androidTestImplementation(platform(libs.androidx.compose.bom))
+  androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+  androidTestImplementation(libs.androidx.espresso.core)
+  androidTestImplementation(libs.androidx.junit)
+  androidTestImplementation(libs.androidx.runner)
+  debugImplementation(libs.androidx.compose.ui.test.manifest)
+  debugImplementation(libs.androidx.compose.ui.tooling)
+  "ksp"(libs.androidx.room.compiler)
+  "ksp"(libs.moshi.kotlin.codegen)
+}
