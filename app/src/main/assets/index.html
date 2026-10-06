@@ -1353,6 +1353,11 @@
       const container = appContainers.find(c => c.id === containerId);
       if (!container) return;
 
+      if (window.AndroidBridge && typeof window.AndroidBridge.generatePdf === 'function') {
+        window.AndroidBridge.generatePdf(JSON.stringify(container));
+        return;
+      }
+
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -1554,6 +1559,11 @@
       lucide.createIcons();
 
       document.getElementById("btn-dl-pdf").onclick = () => {
+        if (window.AndroidBridge && typeof window.AndroidBridge.generatePdf === 'function') {
+          window.AndroidBridge.generatePdf(JSON.stringify(container));
+          closeModal();
+          return;
+        }
         doc.save(filename);
         showToast("Téléchargement lancé");
         closeModal();

@@ -18,31 +18,28 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Setup Gradle 9.3.1
+      - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 9.3.1
+          gradle-version: '9.3.1'
 
-      - name: Patch KSP for GitHub CI headless
+      - name: Create debug.keystore and patch gradle.properties
         run: |
-          echo "org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8 -Djava.awt.headless=true" >> gradle.properties
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
+          echo "android.disallowKotlinSourceSets=false" >> gradle.properties
           echo "ksp.incremental=false" >> gradle.properties
+          echo "org.gradle.configuration-cache=false" >> gradle.properties
           echo "org.gradle.daemon=false" >> gradle.properties
-          cat gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8 -Djava.awt.headless=true" >> gradle.properties
 
-      - name: Generate gradlew and Build APK
-        env:
-          JAVA_TOOL_OPTIONS: "-Djava.awt.headless=true"
-          GRADLE_OPTS: "-Djava.awt.headless=true"
+      - name: Setup Gradle wrapper and build APK Debug
         run: |
           gradle wrapper --gradle-version 9.3.1
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon -Djava.awt.headless=true --stacktrace
+          ./gradlew clean assembleDebug --no-daemon -Djava.awt.headless=true
 
-      - name: Upload APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: ProdSuivi-PRO-V3-APK-Dianamavie
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            **/build/outputs/apk/debug/*.apk
+          name: ProdSuivi-PRO-V3-Debug
+          path: app/build/outputs/apk/debug/*.apk
