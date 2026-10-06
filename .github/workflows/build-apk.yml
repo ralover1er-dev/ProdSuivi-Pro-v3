@@ -18,30 +18,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Find gradlew
-        run: |
-          ls -R
-          find . -name "gradlew" -type f
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Grant execute permission
+      - name: Create Android project from your HTML
         run: |
-          if [ -f "./gradlew" ]; then chmod +x ./gradlew; fi
-          if [ -f "./app/gradlew" ]; then chmod +x ./app/gradlew; fi
-          if [ -f "./android/gradlew" ]; then chmod +x ./android/gradlew; fi
+          ls -la
+          echo '{"name":"prod-suivi","type":"module"}' > package.json
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "ProdSuivi PRO V3" "com.comacam.prodsuivi.v3" --web-dir="." --npm-client npm || true
+          npx cap add android
+          npx cap copy android
 
-      - name: Build APK Release
+      - name: Build APK
         run: |
-          if [ -f "./gradlew" ]; then ./gradlew assembleRelease; 
-          elif [ -f "./app/gradlew" ]; then cd app && ./gradlew assembleRelease;
-          elif [ -f "./android/gradlew" ]; then cd android && ./gradlew assembleRelease;
-          else echo "gradlew not found" && exit 1; fi
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ProdSuivi-PRO-V3-Dianamavie
-          path: |
-            app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/apk/release/*.apk
-            build/outputs/apk/release/*.apk
-            **/app-release*.apk
+          name: ProdSuivi-PRO-V3-APK-Dianamavie
+          path: android/app/build/outputs/apk/debug/*.apk
