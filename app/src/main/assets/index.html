@@ -77,10 +77,10 @@
           </div>
 
           <!-- Formulaire d'Activation -->
-          <form onsubmit="event.preventDefault(); verifierActivation();" class="space-y-4 text-left">
+          <form onsubmit="event.preventDefault(); verifierActivation(); return false;" class="space-y-4 text-left">
             <div>
               <label for="activation-code-input" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Code d'activation
+                Code d\'activation
               </label>
               <div class="relative">
                 <i data-lucide="key" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
@@ -89,14 +89,18 @@
                   id="activation-code-input" 
                   placeholder="Code d'activation" 
                   class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold"
-                  autocomplete="current-password"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
                   onfocus="ensureInputVisible(this)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();verifierActivation();}"
                   required
                 />
                 <button 
                   type="button" 
                   onclick="toggleActivationPasswordVisibility()" 
-                  class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
+                  class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 p-1"
                   title="Afficher/Masquer le code"
                 >
                   <i data-lucide="eye" id="toggle-activation-pwd-icon" class="w-4 h-4"></i>
@@ -106,25 +110,16 @@
               <!-- Message d'erreur rouge -->
               <div id="activation-error" class="hidden text-red-600 text-xs font-bold mt-2.5 p-2.5 bg-red-50 rounded-xl border border-red-200 flex items-center space-x-1.5">
                 <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 shrink-0"></i>
-                <span id="activation-error-msg">Code invalide. Contactez 670053957</span>
-              </div>
-
-              <!-- Compte à rebours de blocage 10 min -->
-              <div id="activation-lockout" class="hidden text-amber-800 text-xs font-bold mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-center">
-                <div class="flex items-center justify-center space-x-1.5 mb-1 text-amber-900 font-extrabold">
-                  <i data-lucide="clock" class="w-4 h-4"></i>
-                  <span>Accès Temporairement Bloqué</span>
-                </div>
-                <div id="activation-lockout-timer" class="text-sm font-black text-amber-950 font-mono">10:00</div>
-                <p class="text-[11px] text-amber-700 mt-1 font-medium">5 tentatives incorrectes. Bloqué 10 min. Contactez 670053957</p>
+                <span id="activation-error-msg">Code invalide. Contactez Audrian Ronis 670053957</span>
               </div>
             </div>
 
             <!-- Bouton ACTIVER -->
             <button 
               id="btn-activate"
-              type="submit" 
-              class="w-full bg-[#166534] hover:bg-[#14532d] active:scale-95 text-white font-black py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2"
+              type="button" 
+              onclick="verifierActivation()" 
+              class="w-full bg-[#166534] hover:bg-[#14532d] active:scale-95 text-white font-black py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
               <i data-lucide="check-circle" class="w-4 h-4"></i>
               <span id="btn-activate-text">ACTIVER</span>
@@ -140,6 +135,11 @@
     </KeyboardAvoidingView>
   </div>
   <script>
+    try {
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
+    } catch(e) {}
     try {
       var atype = localStorage.getItem('activation_type') || localStorage.getItem('@licence_type');
       if (atype === 'definitif' || atype === 'definitive') {
@@ -270,8 +270,34 @@
     }
 
     function getLicenceState() {
-      // 1. Lire activation_type (priorité aux clés standardisées)
-      const activationType = localStorage.getItem('activation_type') || localStorage.getItem('@licence_type');
+      // 0. Support direct de l'objet JSON prodSuivi_licence
+      try {
+        const rawJson = localStorage.getItem('prodSuivi_licence');
+        if (rawJson) {
+          const parsed = JSON.parse(rawJson);
+          if (parsed && (parsed.type === 'definitif' || parsed.type === 'definitive')) {
+            return { active: true, type: 'definitif', trialExpired: false, remainingDays: 0 };
+          }
+          if (parsed && parsed.type === 'essai') {
+            const rawDate = parsed.date || localStorage.getItem('activation_date') || localStorage.getItem('@date_activation');
+            const activationDate = parseInt(rawDate || '0', 10);
+            if (activationDate > 0) {
+              const elapsedDays = (Date.now() - activationDate) / (1000 * 3600 * 24);
+              if (elapsedDays > 7) {
+                return { active: false, type: 'essai', trialExpired: true, remainingDays: 0 };
+              } else {
+                const remainingDays = Math.max(1, Math.ceil(7 - elapsedDays));
+                return { active: true, type: 'essai', trialExpired: false, remainingDays: remainingDays };
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      // 1. Lire activation_type / licence_type / @licence_type (toutes variantes supportées)
+      const activationType = localStorage.getItem('activation_type') || 
+                             localStorage.getItem('licence_type') || 
+                             localStorage.getItem('@licence_type');
 
       // 4. Si activation_type === 'definitif', ouvre l'app direct sans JAMAIS vérifier la date
       if (activationType === 'definitif' || activationType === 'definitive') {
@@ -282,20 +308,23 @@
       if (activationType === 'essai') {
         const rawDate = localStorage.getItem('activation_date') || localStorage.getItem('@date_activation');
         const activationDate = parseInt(rawDate || '0', 10);
-        const elapsedDays = (Date.now() - activationDate) / (1000 * 3600 * 24);
+        if (activationDate > 0) {
+          const elapsedDays = (Date.now() - activationDate) / (1000 * 3600 * 24);
 
-        if (elapsedDays > 7) {
-          // Essai expiré : bloque tout et redemande le code définitif
-          return { active: false, type: 'essai', trialExpired: true, remainingDays: 0 };
-        } else {
-          // Essai encore valide : laisse passer
-          const remainingDays = Math.max(1, Math.ceil(7 - elapsedDays));
-          return { active: true, type: 'essai', trialExpired: false, remainingDays: remainingDays };
+          if (elapsedDays > 7) {
+            // Essai expiré : bloque tout et redemande le code définitif
+            return { active: false, type: 'essai', trialExpired: true, remainingDays: 0 };
+          } else {
+            // Essai encore valide : laisse passer
+            const remainingDays = Math.max(1, Math.ceil(7 - elapsedDays));
+            return { active: true, type: 'essai', trialExpired: false, remainingDays: remainingDays };
+          }
         }
       }
 
-      // Fallback si activé précédemment via @app_activee
+      // Fallback si activé précédemment via @app_activee ou prodSuivi_activated
       if (localStorage.getItem('@app_activee') === 'true' || 
+          localStorage.getItem('prodSuivi_activated') === 'true' ||
           (window.AndroidBridge && typeof window.AndroidBridge.isAppActivated === 'function' && window.AndroidBridge.isAppActivated())) {
         return { active: true, type: 'definitif', trialExpired: false, remainingDays: 0 };
       }
@@ -335,6 +364,14 @@
       const licence = getLicenceState();
       updateHeaderLicenceBadge(licence);
 
+      const inputEl = document.getElementById("activation-code-input");
+      const btnEl = document.getElementById("btn-activate");
+      if (inputEl) inputEl.disabled = false;
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+
       if (licence.trialExpired) {
         // ESSAI 7 JOURS TERMINÉ -> BLOQUE TOUT
         if (lockScreen) {
@@ -342,15 +379,13 @@
           const titleEl = document.getElementById("activation-title");
           const subEl = document.getElementById("activation-subtitle");
           const bannerEl = document.getElementById("activation-trial-expired-banner");
-          const btnEl = document.getElementById("btn-activate-text");
+          const btnTextEl = document.getElementById("btn-activate-text");
           if (titleEl) titleEl.innerText = "⏰ ESSAI 7 JOURS TERMINÉ";
           if (subEl) subEl.innerText = "Conteneur sauvegardé mais verrouillé";
           if (bannerEl) bannerEl.classList.remove("hidden");
-          if (btnEl) btnEl.innerText = "DÉBLOQUER DÉFINITIVEMENT";
-          const inputEl = document.getElementById("activation-code-input");
+          if (btnTextEl) btnTextEl.innerText = "DÉBLOQUER DÉFINITIVEMENT";
           if (inputEl) inputEl.placeholder = "Code définitif (Dianamavie1@)";
         }
-        checkLockoutState();
         return false;
       }
 
@@ -365,82 +400,17 @@
         const titleEl = document.getElementById("activation-title");
         const subEl = document.getElementById("activation-subtitle");
         const bannerEl = document.getElementById("activation-trial-expired-banner");
-        const btnEl = document.getElementById("btn-activate-text");
-        const inputEl = document.getElementById("activation-code-input");
+        const btnTextEl = document.getElementById("btn-activate-text");
         if (titleEl) titleEl.innerText = "ProdSuivi PRO V3 - Licence Officielle";
         if (subEl) subEl.innerText = "Activation obligatoire avant la première utilisation.";
         if (bannerEl) bannerEl.classList.add("hidden");
-        if (btnEl) btnEl.innerText = "ACTIVER";
+        if (btnTextEl) btnTextEl.innerText = "ACTIVER";
         if (inputEl) inputEl.placeholder = "Code d'activation";
       }
-      checkLockoutState();
       return false;
     }
 
-    function checkLockoutState() {
-      const blockedUntil = parseInt(localStorage.getItem('@activation_blocked_until') || '0', 10);
-      const now = Date.now();
-      const inputEl = document.getElementById("activation-code-input");
-      const btnEl = document.getElementById("btn-activate");
-      const lockoutEl = document.getElementById("activation-lockout");
-      const errEl = document.getElementById("activation-error");
-
-      if (now < blockedUntil) {
-        if (inputEl) inputEl.disabled = true;
-        if (btnEl) {
-          btnEl.disabled = true;
-          btnEl.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-        if (lockoutEl) lockoutEl.classList.remove('hidden');
-        if (errEl) errEl.classList.add('hidden');
-
-        updateLockoutCountdown(blockedUntil);
-        if (lockoutInterval) clearInterval(lockoutInterval);
-        lockoutInterval = setInterval(() => {
-          const rem = blockedUntil - Date.now();
-          if (rem <= 0) {
-            clearInterval(lockoutInterval);
-            lockoutInterval = null;
-            localStorage.removeItem('@activation_blocked_until');
-            localStorage.setItem('@activation_attempts', '0');
-            if (inputEl) inputEl.disabled = false;
-            if (btnEl) {
-              btnEl.disabled = false;
-              btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            if (lockoutEl) lockoutEl.classList.add('hidden');
-          } else {
-            updateLockoutCountdown(blockedUntil);
-          }
-        }, 1000);
-        return true;
-      } else {
-        if (lockoutInterval) {
-          clearInterval(lockoutInterval);
-          lockoutInterval = null;
-        }
-        if (inputEl) inputEl.disabled = false;
-        if (btnEl) {
-          btnEl.disabled = false;
-          btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-        if (lockoutEl) lockoutEl.classList.add('hidden');
-        return false;
-      }
-    }
-
-    function updateLockoutCountdown(blockedUntil) {
-      const timerEl = document.getElementById("activation-lockout-timer");
-      if (!timerEl) return;
-      const rem = Math.max(0, blockedUntil - Date.now());
-      const mins = Math.floor(rem / 60000);
-      const secs = Math.floor((rem % 60000) / 1000);
-      timerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-
     function verifierActivation() {
-      if (checkLockoutState()) return;
-
       const inputEl = document.getElementById("activation-code-input");
       const errEl = document.getElementById("activation-error");
       const errMsgEl = document.getElementById("activation-error-msg");
@@ -449,16 +419,26 @@
 
       // 1. Comparaison EXACTE et sensible à la casse avec UNIQUEMENT .trim()
       // INTERDICTION d'utiliser .toUpperCase() ou .toLowerCase() car les codes ont des majuscules.
-      const codeSaisi = inputEl.value.trim();
+      const codeSaisi = (inputEl.value || "")
+        .replace(/[\u200B-\u200D\uFEFF\u00A0\u202F\r\n\t]/g, "")
+        .trim();
 
       // 3. Si code === "Dianamavie1@" alors : localStorage.setItem('activation_type', 'definitif') et localStorage.removeItem('activation_date')
+      // L'activation définitive ne doit PLUS jamais vérifier la date.
       if (codeSaisi === "Dianamavie1@") {
+        const now = Date.now();
+        localStorage.setItem('prodSuivi_licence', JSON.stringify({ active: true, type: 'definitif', date: now }));
         localStorage.setItem('activation_type', 'definitif');
-        localStorage.removeItem('activation_date');
+        localStorage.setItem('licence_type', 'definitif');
+        localStorage.setItem('@licence_type', 'definitive');
         localStorage.setItem('@app_activee', 'true');
-        localStorage.setItem('@licence_type', 'definitif');
-        localStorage.removeItem('@date_activation');
         localStorage.setItem('prodSuivi_activated', 'true');
+        localStorage.removeItem('activation_date');
+        localStorage.removeItem('@date_activation');
+        localStorage.removeItem('@activation_attempts');
+        localStorage.removeItem('@activation_blocked_until');
+        localStorage.removeItem('activation_blocked_until');
+
         if (window.AsyncStorage && typeof window.AsyncStorage.setItem === 'function') {
           window.AsyncStorage.setItem('activation_type', 'definitif');
           window.AsyncStorage.removeItem('activation_date');
@@ -468,37 +448,30 @@
           window.AndroidBridge.setAppActivated(true);
         }
 
-        localStorage.removeItem('@activation_attempts');
-        localStorage.removeItem('@activation_blocked_until');
-        if (lockoutInterval) {
-          clearInterval(lockoutInterval);
-          lockoutInterval = null;
-        }
-
         if (errEl) errEl.classList.add('hidden');
         if (lockScreen) lockScreen.style.display = 'none';
 
         updateHeaderLicenceBadge({ active: true, type: 'definitif' });
         showToast("Licence officielle définitive activée avec succès !");
         renderCurrentView();
-      } 
+        return;
+      }
+
       // 2. Si code === "Nadergeronis1@" alors : localStorage.setItem('activation_date', Date.now()) et localStorage.setItem('activation_type', 'essai')
-      else if (codeSaisi === "Nadergeronis1@") {
-        const curLicence = getLicenceState();
-        if (curLicence.trialExpired) {
-          if (errEl) {
-            if (errMsgEl) errMsgEl.innerText = "Essai 7 jours expiré. Entrez le code définitif (Dianamavie1@).";
-            errEl.classList.remove('hidden');
-          }
-          return;
-        }
+      if (codeSaisi === "Nadergeronis1@") {
         const now = Date.now();
+        localStorage.setItem('prodSuivi_licence', JSON.stringify({ active: true, type: 'essai', date: now }));
         localStorage.setItem('activation_date', now.toString());
-        localStorage.setItem('activation_type', 'essai');
-        localStorage.setItem('@app_activee', 'true');
-        localStorage.setItem('@licence_type', 'essai');
         localStorage.setItem('@date_activation', now.toString());
+        localStorage.setItem('activation_type', 'essai');
+        localStorage.setItem('licence_type', 'essai');
+        localStorage.setItem('@licence_type', 'essai');
+        localStorage.setItem('@app_activee', 'true');
         localStorage.setItem('prodSuivi_activated', 'true');
+        localStorage.removeItem('@activation_attempts');
+        localStorage.removeItem('@activation_blocked_until');
+        localStorage.removeItem('activation_blocked_until');
+
         if (window.AsyncStorage && typeof window.AsyncStorage.setItem === 'function') {
           window.AsyncStorage.setItem('activation_date', now.toString());
           window.AsyncStorage.setItem('activation_type', 'essai');
@@ -508,34 +481,19 @@
           window.AndroidBridge.setAppActivated(true);
         }
 
-        localStorage.removeItem('@activation_attempts');
-        localStorage.removeItem('@activation_blocked_until');
-        if (lockoutInterval) {
-          clearInterval(lockoutInterval);
-          lockoutInterval = null;
-        }
-
         if (errEl) errEl.classList.add('hidden');
         if (lockScreen) lockScreen.style.display = 'none';
 
         updateHeaderLicenceBadge({ active: true, type: 'essai', remainingDays: 7 });
         showToast("Licence d'essai 7 jours activée (J-7)");
         renderCurrentView();
-      } else {
-        // Tentative fausse : "Code invalide. Contactez 670053957"
-        let attempts = parseInt(localStorage.getItem('@activation_attempts') || '0', 10) + 1;
-        localStorage.setItem('@activation_attempts', attempts.toString());
+        return;
+      }
 
-        if (attempts >= 5) {
-          const blockedUntil = Date.now() + (10 * 60 * 1000);
-          localStorage.setItem('@activation_blocked_until', blockedUntil.toString());
-          checkLockoutState();
-        } else {
-          if (errEl) {
-            if (errMsgEl) errMsgEl.innerText = "Code invalide. Contactez 670053957";
-            errEl.classList.remove('hidden');
-          }
-        }
+      // Code invalide
+      if (errEl) {
+        if (errMsgEl) errMsgEl.innerText = "Code invalide. Contactez Audrian Ronis 670053957";
+        errEl.classList.remove('hidden');
       }
     }
 
@@ -1456,8 +1414,6 @@
         renderCurrentView();
       }
     }
-      `;
-    }
 
     function deleteProduct(containerId, productId) {
       const container = appContainers.find(c => c.id === containerId);
@@ -2372,12 +2328,135 @@
       if (e.target === this) closeModal();
     });
 
-    window.addEventListener("DOMContentLoaded", () => {
+    function initApp() {
       // 1. Activation License Check (Obligatoire)
       checkActivationOnLoad();
       // 2. Render view
       renderCurrentView();
-    });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+      initApp();
+    }
+  </script>
+
+  <script>
+// DEBLOQUEUR D'URGENCE - ProdSuivi PRO V3 - FINAL
+(function(){
+  function debloquer(){
+    localStorage.removeItem('@activation_blocked_until');
+    localStorage.removeItem('activation_blocked_until');
+    var btn = document.getElementById('btn-activate');
+    var input = document.getElementById('activation-code-input');
+    if(btn){
+      btn.disabled = false;
+      btn.classList.remove('opacity-50','cursor-not-allowed');
+      btn.style.pointerEvents = 'auto';
+    }
+    if(input){ input.disabled = false; }
+  }
+
+  window.forcerActivation = function(){
+    var input = document.getElementById('activation-code-input');
+    var c = (input ? input.value : "")
+      .replace(/[\u200B-\u200D\uFEFF\u00A0\u202F\r\n\t]/g, "")
+      .trim();
+
+    if(c === "Dianamavie1@"){
+      var now = Date.now();
+      localStorage.setItem('prodSuivi_licence', JSON.stringify({active:true, type:'definitif', date:now}));
+      localStorage.setItem('licence_type', 'definitif');
+      localStorage.setItem('activation_type', 'definitif');
+      localStorage.setItem('@licence_type', 'definitive');
+      localStorage.setItem('@app_activee', 'true');
+      localStorage.setItem('prodSuivi_activated', 'true');
+      localStorage.removeItem('activation_date');
+      localStorage.removeItem('@date_activation');
+      localStorage.removeItem('@activation_blocked_until');
+      localStorage.removeItem('activation_blocked_until');
+      localStorage.removeItem('@activation_attempts');
+
+      if (window.AsyncStorage && typeof window.AsyncStorage.setItem === 'function') {
+        window.AsyncStorage.setItem('activation_type', 'definitif');
+        window.AsyncStorage.removeItem('activation_date');
+        window.AsyncStorage.setItem('@app_activee', 'true');
+      }
+      if (window.AndroidBridge && typeof window.AndroidBridge.setAppActivated === 'function') {
+        window.AndroidBridge.setAppActivated(true);
+      }
+
+      var lock = document.getElementById('lockScreen');
+      if (lock) lock.style.display = 'none';
+      var err = document.getElementById('activation-error');
+      if (err) err.classList.add('hidden');
+
+      if (typeof updateHeaderLicenceBadge === 'function') {
+        updateHeaderLicenceBadge({ active: true, type: 'definitif' });
+      }
+      if (typeof showToast === 'function') {
+        showToast("Licence officielle définitive activée avec succès !");
+      }
+      if (typeof renderCurrentView === 'function') {
+        renderCurrentView();
+      }
+    } else if(c === "Nadergeronis1@"){
+      var now = Date.now();
+      localStorage.setItem('prodSuivi_licence', JSON.stringify({active:true, type:'essai', date:now}));
+      localStorage.setItem('licence_type', 'essai');
+      localStorage.setItem('activation_type', 'essai');
+      localStorage.setItem('@licence_type', 'essai');
+      localStorage.setItem('activation_date', now.toString());
+      localStorage.setItem('@date_activation', now.toString());
+      localStorage.setItem('@app_activee', 'true');
+      localStorage.setItem('prodSuivi_activated', 'true');
+      localStorage.removeItem('@activation_blocked_until');
+      localStorage.removeItem('activation_blocked_until');
+      localStorage.removeItem('@activation_attempts');
+
+      if (window.AsyncStorage && typeof window.AsyncStorage.setItem === 'function') {
+        window.AsyncStorage.setItem('activation_date', now.toString());
+        window.AsyncStorage.setItem('activation_type', 'essai');
+        window.AsyncStorage.setItem('@app_activee', 'true');
+      }
+      if (window.AndroidBridge && typeof window.AndroidBridge.setAppActivated === 'function') {
+        window.AndroidBridge.setAppActivated(true);
+      }
+
+      var lock = document.getElementById('lockScreen');
+      if (lock) lock.style.display = 'none';
+      var err = document.getElementById('activation-error');
+      if (err) err.classList.add('hidden');
+
+      if (typeof updateHeaderLicenceBadge === 'function') {
+        updateHeaderLicenceBadge({ active: true, type: 'essai', remainingDays: 7 });
+      }
+      if (typeof showToast === 'function') {
+        showToast("Licence d'essai 7 jours activée (J-7)");
+      }
+      if (typeof renderCurrentView === 'function') {
+        renderCurrentView();
+      }
+    } else {
+      var errEl = document.getElementById('activation-error');
+      var errMsgEl = document.getElementById('activation-error-msg');
+      if (errEl) {
+        if (errMsgEl) errMsgEl.innerText = "Code invalide. Contactez Audrian Ronis 670053957";
+        errEl.classList.remove('hidden');
+      }
+    }
+  };
+
+  // Branchement auto toutes les 500ms pour être sûr
+  setInterval(debloquer, 500);
+  setInterval(function(){
+    var b = document.getElementById('btn-activate');
+    if(b && b.onclick !== window.forcerActivation){
+      b.onclick = function(e){ e.preventDefault(); window.forcerActivation(); };
+    }
+  }, 500);
+})();
   </script>
 </body>
 </html>

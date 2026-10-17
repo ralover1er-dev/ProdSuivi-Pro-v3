@@ -593,7 +593,17 @@ fun WebAppScreen(
                     }
                 }
 
-                loadUrl("file:///android_asset/index.html")
+                val urlToLoad = try {
+                    val publicList = context.assets.list("public")
+                    if (publicList != null && publicList.contains("index.html")) {
+                        "file:///android_asset/public/index.html"
+                    } else {
+                        "file:///android_asset/index.html"
+                    }
+                } catch (e: Exception) {
+                    "file:///android_asset/index.html"
+                }
+                loadUrl(urlToLoad)
                 onWebViewCreated(this)
             }
         }

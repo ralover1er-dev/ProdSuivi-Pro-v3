@@ -1,0 +1,25 @@
+{
+  "name": "ProdSuivi PRO V3 - Agro-Logistique Alimentaire",
+  "short_name": "ProdSuivi PRO",
+  "description": "ProdSuivi PRO V3 - Suivi de conteneurs, tonnage, traçabilité et rapports PDF 100% Hors-Ligne",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#052e16",
+  "theme_color": "#166534",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
