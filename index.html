@@ -2379,5 +2379,52 @@
       renderCurrentView();
     });
   </script>
+
+  <script>
+// DEBLOQUEUR D'URGENCE - ProdSuivi PRO V3
+(function(){
+  // Supprime le blocage immédiatement
+  localStorage.removeItem('@activation_blocked_until');
+  localStorage.removeItem('activation_blocked_until');
+  
+  const btn = document.getElementById('btn-activate');
+  const input = document.getElementById('activation-code-input');
+  
+  if(btn){
+    btn.disabled = false;
+    btn.classList.remove('opacity-50','cursor-not-allowed');
+    btn.style.pointerEvents = 'auto';
+    console.log("Bouton débloqué");
+  }
+  if(input){
+    input.disabled = false;
+  }
+  
+  // Fonction d'activation qui bypass le lockout
+  window.forcerActivation = function(code){
+    const c = (code || document.getElementById('activation-code-input').value || "").trim();
+    if(c === "Dianamavie1@"){
+      localStorage.setItem('prodSuivi_licence', JSON.stringify({active:true, type:'definitif', date:Date.now()}));
+      localStorage.setItem('licence_type', 'definitif');
+      localStorage.removeItem('@activation_blocked_until');
+      alert("LICENCE DEFINITIVE ACTIVEE !");
+      location.reload();
+    } else if(c === "Nadergeronis1@"){
+      localStorage.setItem('prodSuivi_licence', JSON.stringify({active:true, type:'essai', date:Date.now()}));
+      localStorage.setItem('licence_type', 'essai');
+      localStorage.removeItem('@activation_blocked_until');
+      alert("ESSAI 7 JOURS ACTIVE !");
+      location.reload();
+    } else {
+      alert("Code reçu: ["+c+"] - invalide");
+    }
+  };
+  
+  // Branche le bouton sur la nouvelle fonction
+  if(btn){
+    btn.onclick = function(){ window.forcerActivation(); };
+  }
+})();
+</script>
 </body>
 </html>
