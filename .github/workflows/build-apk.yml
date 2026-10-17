@@ -12,6 +12,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Node deps
+        run: |
+          npm install
+          npx cap copy android || true
+          mkdir -p app/src/main/assets/public
+          cp -f index.html app/src/main/assets/public/index.html || true
+          cp -f index.html app/src/main/assets/public/ || true
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -25,11 +38,8 @@ jobs:
 
       - name: Create debug.keystore and patch gradle.properties
         run: |
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
-          echo "android.disallowKotlinSourceSets=false" >> gradle.properties
-          echo "ksp.incremental=false" >> gradle.properties
-          echo "org.gradle.configuration-cache=false" >> gradle.properties
-          echo "org.gradle.daemon=false" >> gradle.properties
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Debug, OU=Debug, O=Debug, L=Debug, S=Debug, C=US" -keyalg RSA -keysize 2048 -validity 10000
+          echo "android.disableAutomaticComponentCreation=true" >> gradle.properties || true
           echo "org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8 -Djava.awt.headless=true" >> gradle.properties
 
       - name: Setup Gradle wrapper and build APK Debug
