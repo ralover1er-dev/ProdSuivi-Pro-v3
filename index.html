@@ -4,98 +4,157 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>ProdSuivi PRO V3 - Agro-Logistique Alimentaire</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PWA & 100% Offline-First Assets -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#166534" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="./assets/js/lucide.min.js"></script>
+  <script src="./assets/js/jspdf.umd.min.js"></script>
+  <script src="./assets/js/jspdf.plugin.autotable.min.js"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            agro: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' }
-          },
-          fontFamily: { sans: ['Inter', 'sans-serif'] }
-        }
-      }
+    // Enregistrement PWA Service Worker 100% Offline-First
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then((reg) => console.log('[PWA] Service Worker enregistre avec succes:', reg.scope))
+          .catch((err) => console.log('[PWA] Service Worker non actif:', err));
+      });
     }
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+    /* Keyboard avoiding & ScrollView emulation (flex-grow: 1, padding-bottom: 150px) */
+    KeyboardAvoidingView, keyboardavoidingview, .keyboard-avoiding-container, [behavior] {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: 100%;
+    }
+    ScrollView, scrollview, .keyboard-scroll-view, [contentContainerStyle], [contentcontainerstyle] {
+      flex-grow: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 150px !important;
+      width: 100%;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body class="h-full text-slate-800 flex flex-col bg-slate-100 overflow-x-hidden">
 
   <!-- ======================================================== -->
-  <!-- 1. ÉCRAN DE VERROUILLAGE PLEIN ÉCRAN (LICENCE D'ACTIVATION) -->
+  <!-- 1. ÉCRAN D'ACTIVATION OBLIGATOIRE (LICENCE OFFICIELLE) -->
   <!-- ======================================================== -->
-  <div id="lockScreen" style="position:fixed; inset:0; z-index:99999; background:#052e16; display:none;" class="flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 sm:p-7 text-center relative border border-emerald-950/20">
-      <!-- Icone / Emblème -->
-      <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto mb-4 border border-emerald-200 shadow-inner">
-        <i data-lucide="shield-check" class="w-8 h-8 text-[#166534]"></i>
-      </div>
-      
-      <!-- Titre et sous-titre obligatoires -->
-      <h2 class="text-xl font-black text-slate-900 mb-1.5 flex items-center justify-center space-x-1.5">
-        <span>🔒</span>
-        <span>Activation ProdSuivi PRO</span>
-      </h2>
-      
-      <p class="text-xs text-slate-600 mb-5 leading-relaxed font-medium">
-        Appareil non activé. Contactez AUDRIAN Ronis - Douala Export
-      </p>
-
-      <!-- Formulaire de Licence Unique -->
-      <form onsubmit="event.preventDefault(); verifierLicence();" class="space-y-4 text-left">
-        <div>
-          <label for="licence-input" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-            Clé de licence / Mot de passe
-          </label>
-          <div class="relative">
-            <input 
-              type="password" 
-              id="licence-input" 
-              placeholder="Entrez le mot de passe d'activation" 
-              class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium pr-10"
-              autocomplete="current-password"
-              required
-            />
-            <button 
-              type="button" 
-              onclick="togglePasswordVisibility('licence-input', 'toggle-pwd-icon')" 
-              class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
-              title="Afficher/Masquer le mot de passe"
-            >
-              <i data-lucide="eye" id="toggle-pwd-icon" class="w-5 h-5"></i>
-            </button>
+  <div id="lockScreen" style="position:fixed; inset:0; z-index:99999; background: linear-gradient(135deg, #052e16 0%, #064e3b 50%, #022c22 100%); display:flex;" class="w-full h-full min-h-screen">
+    <KeyboardAvoidingView behavior="height" style="flex:1; width:100%; height:100%;">
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle="flexGrow:1, paddingBottom:150" class="keyboard-scroll-view" style="flex-grow:1; padding-bottom:150px; width:100%; display:flex; align-items:center; justify-content:center; min-height:100%; padding:1rem;">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 sm:p-7 text-center relative border border-emerald-950/20 my-auto">
+          <!-- Icone / Emblème -->
+          <div class="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto mb-4 border border-emerald-200 shadow-md">
+            <i data-lucide="shield-check" class="w-8 h-8 text-[#166534]"></i>
           </div>
-          <!-- Message d'erreur rouge -->
-          <div id="license-error" class="hidden text-red-600 text-xs font-bold mt-2 flex items-center space-x-1.5">
-            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
-            <span>Mot de passe incorrect</span>
+          
+          <!-- Titre exact : ProdSuivi PRO V3 - Licence Officielle -->
+          <h2 id="activation-title" class="text-lg font-black text-slate-900 mb-1 leading-snug">
+            ProdSuivi PRO V3 - Licence Officielle
+          </h2>
+          
+          <p id="activation-subtitle" class="text-xs text-slate-500 mb-4 leading-relaxed font-medium">
+            Activation obligatoire avant la première utilisation.
+          </p>
+
+          <!-- Bannière si Essai 7 Jours terminé -->
+          <div id="activation-trial-expired-banner" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-2xl text-left">
+            <div class="text-xs font-black text-red-700 flex items-center space-x-1.5 mb-1">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0"></i>
+              <span>Conteneur sauvegardé mais verrouillé</span>
+            </div>
+            <p class="text-[11px] text-slate-600 font-semibold leading-relaxed">
+              Contact Audrian Ronis <span class="text-red-700 font-bold">670053957</span> pour déblocage définitif.
+            </p>
+          </div>
+
+          <!-- Formulaire d'Activation -->
+          <form onsubmit="event.preventDefault(); verifierActivation();" class="space-y-4 text-left">
+            <div>
+              <label for="activation-code-input" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                Code d'activation
+              </label>
+              <div class="relative">
+                <i data-lucide="key" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                <input 
+                  type="password" 
+                  id="activation-code-input" 
+                  placeholder="Code d'activation" 
+                  class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold"
+                  autocomplete="current-password"
+                  onfocus="ensureInputVisible(this)"
+                  required
+                />
+                <button 
+                  type="button" 
+                  onclick="toggleActivationPasswordVisibility()" 
+                  class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
+                  title="Afficher/Masquer le code"
+                >
+                  <i data-lucide="eye" id="toggle-activation-pwd-icon" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- Message d'erreur rouge -->
+              <div id="activation-error" class="hidden text-red-600 text-xs font-bold mt-2.5 p-2.5 bg-red-50 rounded-xl border border-red-200 flex items-center space-x-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 shrink-0"></i>
+                <span id="activation-error-msg">Code invalide. Contactez 670053957</span>
+              </div>
+
+              <!-- Compte à rebours de blocage 10 min -->
+              <div id="activation-lockout" class="hidden text-amber-800 text-xs font-bold mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-center">
+                <div class="flex items-center justify-center space-x-1.5 mb-1 text-amber-900 font-extrabold">
+                  <i data-lucide="clock" class="w-4 h-4"></i>
+                  <span>Accès Temporairement Bloqué</span>
+                </div>
+                <div id="activation-lockout-timer" class="text-sm font-black text-amber-950 font-mono">10:00</div>
+                <p class="text-[11px] text-amber-700 mt-1 font-medium">5 tentatives incorrectes. Bloqué 10 min. Contactez 670053957</p>
+              </div>
+            </div>
+
+            <!-- Bouton ACTIVER -->
+            <button 
+              id="btn-activate"
+              type="submit" 
+              class="w-full bg-[#166534] hover:bg-[#14532d] active:scale-95 text-white font-black py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2"
+            >
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              <span id="btn-activate-text">ACTIVER</span>
+            </button>
+          </form>
+
+          <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+            <span>Support Technique</span>
+            <span class="font-bold text-emerald-800">670053957</span>
           </div>
         </div>
-
-        <!-- Bouton vert d'activation -->
-        <button 
-          type="submit" 
-          class="w-full bg-[#166534] hover:bg-[#14532d] active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2"
-        >
-          <i data-lucide="key" class="w-4 h-4"></i>
-          <span>Activer l'application</span>
-        </button>
-      </form>
-
-      <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-        <span>AUDRIAN Ronis</span>
-        <span class="font-semibold text-emerald-800">Douala Export</span>
-      </div>
-    </div>
+      </ScrollView>
+    </KeyboardAvoidingView>
   </div>
+  <script>
+    try {
+      var act = localStorage.getItem('@app_activee') === 'true' || localStorage.getItem('prodSuivi_activated') === 'true';
+      var ltype = localStorage.getItem('@licence_type') || 'definitive';
+      var dact = parseInt(localStorage.getItem('@date_activation') || '0', 10);
+      var expired = false;
+      if (ltype === 'essai') {
+        var days = (Date.now() - dact) / (1000 * 3600 * 24);
+        if (days > 7) expired = true;
+      }
+      if (act && !expired) {
+        var _ls = document.getElementById('lockScreen');
+        if (_ls) _ls.style.display = 'none';
+      }
+    } catch(e) {}
+  </script>
 
   <!-- Header -->
   <header id="main-header" class="bg-agro-800 text-white shadow-md sticky top-0 z-40">
@@ -154,33 +213,303 @@
 
   <script>
     // ==========================================
-    // LICENCE D'ACTIVATION UNIQUE OBLIGATOIRE
+    // 1. SYSTÈME D'ACTIVATION 2 CLÉS - VERSION OFFICIELLE
     // ==========================================
+    const MOT_DE_PASSE_ESSAI = "Nadergeronis1@";
+    const MOT_DE_PASSE_DEFINITIF = "Dianamavie1@";
     const MOT_DE_PASSE_MAITRE = "Dianamavie1@";
 
-    function verifierLicence() {
-      const inputEl = document.getElementById("licence-input");
-      const errEl = document.getElementById("license-error");
+    // Émulation AsyncStorage pour conformité React Native / stockage persistant
+    window.AsyncStorage = {
+      getItem: (key) => {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+      },
+      setItem: (key, val) => {
+        try { localStorage.setItem(key, String(val)); } catch (e) {}
+        return Promise.resolve();
+      },
+      removeItem: (key) => {
+        try { localStorage.removeItem(key); } catch (e) {}
+        return Promise.resolve();
+      }
+    };
+
+    let lockoutInterval = null;
+
+    // Helper clavier : garantit que l'input actif remonte toujours au-dessus du clavier
+    function ensureInputVisible(el) {
+      if (!el) return;
+      [30, 150, 300, 500].forEach(delay => {
+        setTimeout(() => {
+          try {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+          } catch (e) {
+            try { el.scrollIntoView(false); } catch (err) {}
+          }
+        }, delay);
+      });
+    }
+
+    document.addEventListener('focusin', (e) => {
+      const tag = e.target && e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        ensureInputVisible(e.target);
+      }
+    });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+          ensureInputVisible(active);
+        }
+      });
+    }
+
+    function getLicenceState() {
+      let active = false;
+      try {
+        if (window.AsyncStorage && typeof window.AsyncStorage.getItem === 'function') {
+          if (window.AsyncStorage.getItem('@app_activee') === 'true') active = true;
+        }
+        if (localStorage.getItem('@app_activee') === 'true' || localStorage.getItem('prodSuivi_activated') === 'true') {
+          active = true;
+        }
+        if (window.AndroidBridge && typeof window.AndroidBridge.isAppActivated === 'function') {
+          if (window.AndroidBridge.isAppActivated()) active = true;
+        }
+      } catch (e) {}
+
+      if (!active) {
+        return { active: false, type: 'none', trialExpired: false, remainingDays: 0 };
+      }
+
+      const licenceType = localStorage.getItem('@licence_type') || 'definitive';
+      if (licenceType === 'essai') {
+        const dateActivation = parseInt(localStorage.getItem('@date_activation') || '0', 10);
+        const elapsedDays = (Date.now() - dateActivation) / (1000 * 3600 * 24);
+        if (elapsedDays > 7) {
+          return { active: false, type: 'essai', trialExpired: true, remainingDays: 0 };
+        } else {
+          const remainingDays = Math.max(1, Math.ceil(7 - elapsedDays));
+          return { active: true, type: 'essai', trialExpired: false, remainingDays: remainingDays };
+        }
+      }
+
+      return { active: true, type: 'definitive', trialExpired: false, remainingDays: 0 };
+    }
+
+    function updateHeaderLicenceBadge(licence) {
+      licence = licence || getLicenceState();
+      const tagContainer = document.getElementById("header-user-tag");
+      if (!tagContainer) return;
+      if (licence && licence.type === 'essai' && licence.active) {
+        tagContainer.innerHTML = `
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 border border-amber-300 flex items-center space-x-1 shadow-sm">
+            <i data-lucide="clock" class="w-3 h-3"></i>
+            <span>Essai J-${licence.remainingDays || 4}</span>
+          </span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-agro-700 text-emerald-200 border border-agro-600">
+            Douala Export
+          </span>
+        `;
+      } else {
+        tagContainer.innerHTML = `
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-agro-700 text-emerald-200 border border-agro-600">
+            Douala Export
+          </span>
+        `;
+      }
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
+    }
+
+    function checkActivationOnLoad() {
+      const lockScreen = document.getElementById("lockScreen");
+      const licence = getLicenceState();
+      updateHeaderLicenceBadge(licence);
+
+      if (licence.trialExpired) {
+        // ESSAI 7 JOURS TERMINÉ -> BLOQUE TOUT
+        if (lockScreen) {
+          lockScreen.style.display = 'flex';
+          const titleEl = document.getElementById("activation-title");
+          const subEl = document.getElementById("activation-subtitle");
+          const bannerEl = document.getElementById("activation-trial-expired-banner");
+          const btnEl = document.getElementById("btn-activate-text");
+          if (titleEl) titleEl.innerText = "⏰ ESSAI 7 JOURS TERMINÉ";
+          if (subEl) subEl.innerText = "Conteneur sauvegardé mais verrouillé";
+          if (bannerEl) bannerEl.classList.remove("hidden");
+          if (btnEl) btnEl.innerText = "DÉBLOQUER DÉFINITIVEMENT";
+        }
+        checkLockoutState();
+        return false;
+      }
+
+      if (licence.active) {
+        if (lockScreen) lockScreen.style.display = 'none';
+        return true;
+      }
+
+      // Non activé : afficher impérativement l'écran bloquant
+      if (lockScreen) {
+        lockScreen.style.display = 'flex';
+        const titleEl = document.getElementById("activation-title");
+        const subEl = document.getElementById("activation-subtitle");
+        const bannerEl = document.getElementById("activation-trial-expired-banner");
+        const btnEl = document.getElementById("btn-activate-text");
+        if (titleEl) titleEl.innerText = "ProdSuivi PRO V3 - Licence Officielle";
+        if (subEl) subEl.innerText = "Activation obligatoire avant la première utilisation.";
+        if (bannerEl) bannerEl.classList.add("hidden");
+        if (btnEl) btnEl.innerText = "ACTIVER";
+      }
+      checkLockoutState();
+      return false;
+    }
+
+    function checkLockoutState() {
+      const blockedUntil = parseInt(localStorage.getItem('@activation_blocked_until') || '0', 10);
+      const now = Date.now();
+      const inputEl = document.getElementById("activation-code-input");
+      const btnEl = document.getElementById("btn-activate");
+      const lockoutEl = document.getElementById("activation-lockout");
+      const errEl = document.getElementById("activation-error");
+
+      if (now < blockedUntil) {
+        if (inputEl) inputEl.disabled = true;
+        if (btnEl) {
+          btnEl.disabled = true;
+          btnEl.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        if (lockoutEl) lockoutEl.classList.remove('hidden');
+        if (errEl) errEl.classList.add('hidden');
+
+        updateLockoutCountdown(blockedUntil);
+        if (lockoutInterval) clearInterval(lockoutInterval);
+        lockoutInterval = setInterval(() => {
+          const rem = blockedUntil - Date.now();
+          if (rem <= 0) {
+            clearInterval(lockoutInterval);
+            lockoutInterval = null;
+            localStorage.removeItem('@activation_blocked_until');
+            localStorage.setItem('@activation_attempts', '0');
+            if (inputEl) inputEl.disabled = false;
+            if (btnEl) {
+              btnEl.disabled = false;
+              btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            if (lockoutEl) lockoutEl.classList.add('hidden');
+          } else {
+            updateLockoutCountdown(blockedUntil);
+          }
+        }, 1000);
+        return true;
+      } else {
+        if (lockoutInterval) {
+          clearInterval(lockoutInterval);
+          lockoutInterval = null;
+        }
+        if (inputEl) inputEl.disabled = false;
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+        if (lockoutEl) lockoutEl.classList.add('hidden');
+        return false;
+      }
+    }
+
+    function updateLockoutCountdown(blockedUntil) {
+      const timerEl = document.getElementById("activation-lockout-timer");
+      if (!timerEl) return;
+      const rem = Math.max(0, blockedUntil - Date.now());
+      const mins = Math.floor(rem / 60000);
+      const secs = Math.floor((rem % 60000) / 1000);
+      timerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function verifierActivation() {
+      if (checkLockoutState()) return;
+
+      const inputEl = document.getElementById("activation-code-input");
+      const errEl = document.getElementById("activation-error");
+      const errMsgEl = document.getElementById("activation-error-msg");
       const lockScreen = document.getElementById("lockScreen");
       if (!inputEl) return;
 
-      const inputVal = inputEl.value.trim();
-      if (btoa(inputVal) === btoa(MOT_DE_PASSE_MAITRE)) {
+      const codeSaisi = inputEl.value.trim();
+
+      if (codeSaisi === MOT_DE_PASSE_DEFINITIF) {
+        // Clé DÉFINITIVE = Dianamavie1@ (exact, avec majuscule et @) -> accès complet à vie
+        AsyncStorage.setItem('@app_activee', 'true');
+        AsyncStorage.setItem('@licence_type', 'definitive');
+        localStorage.setItem('@app_activee', 'true');
+        localStorage.setItem('@licence_type', 'definitive');
         localStorage.setItem('prodSuivi_activated', 'true');
-        if (lockScreen) lockScreen.style.display = 'none';
+        if (window.AndroidBridge && typeof window.AndroidBridge.setAppActivated === 'function') {
+          window.AndroidBridge.setAppActivated(true);
+        }
+        localStorage.removeItem('@activation_attempts');
+        localStorage.removeItem('@activation_blocked_until');
+        if (lockoutInterval) {
+          clearInterval(lockoutInterval);
+          lockoutInterval = null;
+        }
+
         if (errEl) errEl.classList.add('hidden');
-        showToast("Licence activée avec succès !");
+        if (lockScreen) lockScreen.style.display = 'none';
+
+        updateHeaderLicenceBadge({ active: true, type: 'definitive' });
+        showToast("Licence définitive activée à vie !");
+        renderCurrentView();
+      } else if (codeSaisi === MOT_DE_PASSE_ESSAI) {
+        // Clé ESSAI 7 jours = Nadergeronis1@ (exact, avec majuscule et @)
+        const now = Date.now();
+        AsyncStorage.setItem('@app_activee', 'true');
+        AsyncStorage.setItem('@licence_type', 'essai');
+        AsyncStorage.setItem('@date_activation', now.toString());
+        localStorage.setItem('@app_activee', 'true');
+        localStorage.setItem('@licence_type', 'essai');
+        localStorage.setItem('@date_activation', now.toString());
+        localStorage.setItem('prodSuivi_activated', 'true');
+        if (window.AndroidBridge && typeof window.AndroidBridge.setAppActivated === 'function') {
+          window.AndroidBridge.setAppActivated(true);
+        }
+        localStorage.removeItem('@activation_attempts');
+        localStorage.removeItem('@activation_blocked_until');
+        if (lockoutInterval) {
+          clearInterval(lockoutInterval);
+          lockoutInterval = null;
+        }
+
+        if (errEl) errEl.classList.add('hidden');
+        if (lockScreen) lockScreen.style.display = 'none';
+
+        updateHeaderLicenceBadge({ active: true, type: 'essai', remainingDays: 7 });
+        showToast("Licence Essai 7 jours activée (J-7)");
+        renderCurrentView();
       } else {
-        if (errEl) {
-          errEl.innerText = "Mot de passe incorrect";
-          errEl.classList.remove('hidden');
+        // Tentative fausse : "Code invalide. Contactez 670053957"
+        let attempts = parseInt(localStorage.getItem('@activation_attempts') || '0', 10) + 1;
+        localStorage.setItem('@activation_attempts', attempts.toString());
+
+        if (attempts >= 5) {
+          const blockedUntil = Date.now() + (10 * 60 * 1000);
+          localStorage.setItem('@activation_blocked_until', blockedUntil.toString());
+          checkLockoutState();
+        } else {
+          if (errEl) {
+            if (errMsgEl) errMsgEl.innerText = "Code invalide. Contactez 670053957";
+            errEl.classList.remove('hidden');
+          }
         }
       }
     }
 
-    function togglePasswordVisibility(inputId, iconId) {
-      const input = document.getElementById(inputId);
-      const icon = document.getElementById(iconId);
+    function toggleActivationPasswordVisibility() {
+      const input = document.getElementById("activation-code-input");
+      const icon = document.getElementById("toggle-activation-pwd-icon");
       if (!input) return;
       if (input.type === 'password') {
         input.type = 'text';
@@ -189,16 +518,8 @@
         input.type = 'password';
         if (icon) icon.setAttribute('data-lucide', 'eye');
       }
-      lucide.createIcons();
-    }
-
-    function checkActivationOnLoad() {
-      const lockScreen = document.getElementById("lockScreen");
-      if (!lockScreen) return;
-      if (localStorage.getItem('prodSuivi_activated') !== 'true') {
-        lockScreen.style.display = 'flex';
-      } else {
-        lockScreen.style.display = 'none';
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
       }
     }
 
@@ -228,32 +549,18 @@
       { id: "p20", name: "Gingembre Frais & Aromates", mass: 500.0, objectifKg: 2000.0, cartonWeight: 20.0, pcsPerCarton: 20, pcWeight: 1.0, desc: "Gingembre noble sélection exportation", sealed: true, weighings: [{ date: "05/10/2026", mass: 250.0 }, { date: "05/10/2026", mass: 250.0 }] }
     ];
 
-    const DEFAULT_USERS = [
-      {
-        id: "u-1",
-        name: "AUDRIAN Ronis",
-        phone: "670053957",
-        password: "password123",
-        role: "Superviseur Export Maritime",
-        company: "COMACAM Agro-Logistique Export",
-        createdAt: "01/10/2026"
-      }
-    ];
+    const DEFAULT_USERS = [];
+    const DEFAULT_CONTAINERS = [];
 
-    const DEFAULT_CONTAINERS = [
-      {
-        id: "cnt-1",
-        name: "COMACAM SUARL",
-        client: "COMACAM SUARL International",
-        destination: "Rungis - Paris, France",
-        createdAt: "05/10/2026 11:09",
-        closed: true,
-        locked: true,
-        producerPhone: "670053957",
-        producerName: "AUDRIAN Ronis",
-        products: INITIAL_PRODUCTS_V3
+    // Nettoyage immédiat des anciennes données de démonstration
+    try {
+      if (!localStorage.getItem("prodsuivi_data_cleaned_v1")) {
+        localStorage.removeItem("prodsuivi_users_v3");
+        localStorage.removeItem("prodsuivi_current_user_v3");
+        localStorage.removeItem("prodsuivi_containers_v3");
+        localStorage.setItem("prodsuivi_data_cleaned_v1", "true");
       }
-    ];
+    } catch (e) {}
 
     // State
     let appUsers = loadUsers();
@@ -264,17 +571,17 @@
     let currentProductId = null;
     let containerSearchQuery = "";
     let productSearchQuery = "";
-    let authMode = "login"; // 'login' or 'register'
+    let authMode = "login";
 
     function loadUsers() {
       try {
         const s = localStorage.getItem("prodsuivi_users_v3");
         if (s) {
           const parsed = JSON.parse(s);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) return parsed;
         }
       } catch (e) { console.error(e); }
-      return DEFAULT_USERS;
+      return [];
     }
 
     function saveUsers() {
@@ -289,7 +596,7 @@
           if (u && u.phone) return u;
         }
       } catch (e) {}
-      return DEFAULT_USERS[0];
+      return null;
     }
 
     function saveCurrentAuthUser(user) {
@@ -305,16 +612,12 @@
         const s = localStorage.getItem("prodsuivi_containers_v3");
         if (s) {
           const parsed = JSON.parse(s);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // Guarantee 20 items and 26.978 T if older 19 items stored
-            if (parsed[0] && parsed[0].products && parsed[0].products.length === 19) {
-              parsed[0].products = INITIAL_PRODUCTS_V3;
-            }
+          if (Array.isArray(parsed)) {
             return parsed;
           }
         }
       } catch (e) {}
-      return DEFAULT_CONTAINERS;
+      return [];
     }
 
     function saveContainers() {
@@ -339,6 +642,13 @@
       currentView = view;
       if (containerId !== null) currentContainerId = containerId;
       if (productId !== null) currentProductId = productId;
+
+      if (currentContainerId) {
+        const activeCont = appContainers.find(c => c.id === currentContainerId);
+        if (activeCont && window.AndroidBridge && typeof window.AndroidBridge.updateActiveContainer === 'function') {
+          window.AndroidBridge.updateActiveContainer(JSON.stringify(activeCont));
+        }
+      }
 
       ['dashboard', 'containers', 'profile'].forEach(id => {
         const btn = document.getElementById("nav-" + id);
@@ -382,128 +692,193 @@
     function renderCurrentView() {
       const el = document.getElementById("app-container");
       const bottomNav = document.getElementById("bottom-nav");
+      const mainHeader = document.getElementById("main-header");
       if (!el) return;
 
-      // If user is not logged in, show Auth Screen
+      // Logique d'affichage : si user == null, afficher l'écran Login, sinon afficher le contenu de l'app
       if (!currentAuthUser) {
         if (bottomNav) bottomNav.classList.add("hidden");
+        if (mainHeader) mainHeader.classList.add("hidden");
         renderAuthScreen(el);
-        lucide.createIcons();
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
         return;
       }
 
+      if (mainHeader) {
+        mainHeader.classList.remove("hidden");
+        updateHeaderLicenceBadge();
+      }
       if (bottomNav) bottomNav.classList.remove("hidden");
       if (currentView === 'dashboard') renderDashboard(el);
       else if (currentView === 'containers') renderContainerList(el);
       else if (currentView === 'container-detail') renderContainerDetail(el);
       else if (currentView === 'product-detail') renderProductDetail(el);
       else if (currentView === 'profile') renderProfile(el);
-      lucide.createIcons();
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
     }
 
     // ==========================================
     // AUTHENTICATION SCREEN: LOGIN & REGISTER
     // ==========================================
+    let logoTapCount = 0;
+    let logoTapTimer = null;
+
+    function handleLogoTap() {
+      logoTapCount++;
+      if (logoTapTimer) clearTimeout(logoTapTimer);
+      if (logoTapCount >= 5) {
+        logoTapCount = 0;
+        connexionRapide();
+      } else {
+        logoTapTimer = setTimeout(() => {
+          logoTapCount = 0;
+        }, 2500);
+      }
+    }
+
+    const AUDRIAN_RONIS_USER = {
+      id: "u-audrian-ronis",
+      name: "AUDRIAN Ronis",
+      phone: "670053957",
+      password: "password123",
+      role: "Superviseur Export Maritime",
+      company: "COMACAM Agro-Logistique Export",
+      createdAt: "01/10/2026"
+    };
+
+    function connexionRapide() {
+      let user = appUsers.find(u => u.phone === AUDRIAN_RONIS_USER.phone);
+      if (!user) {
+        user = { ...AUDRIAN_RONIS_USER };
+        appUsers.push(user);
+        saveUsers();
+      }
+      saveCurrentAuthUser(user);
+      showToast(`Connexion rapide : ${user.name}`);
+      navigateTo('dashboard');
+    }
+
     function renderAuthScreen(host) {
       host.innerHTML = `
-        <div class="px-5 py-8 space-y-6">
-          <div class="text-center space-y-2">
-            <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-agro-800 to-agro-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-agro-800/20 border-2 border-white">
-              <i data-lucide="container" class="w-8 h-8 text-agro-200"></i>
-            </div>
-            <h2 class="text-2xl font-black text-slate-900 tracking-tight">ProdSuivi PRO <span class="text-agro-700">V3</span></h2>
-            <p class="text-xs text-slate-500 max-w-xs mx-auto">Plateforme de Suivi Agro-Logistique Alimentaire & Traçabilité Export Maritime</p>
-          </div>
-
-          <!-- Auth Tabs -->
-          <div class="bg-slate-200 p-1 rounded-2xl grid grid-cols-2 text-xs font-bold">
-            <button onclick="authMode = 'login'; renderCurrentView();" class="py-2.5 rounded-xl transition-all ${authMode === 'login' ? 'bg-white text-agro-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">
-              Connexion
-            </button>
-            <button onclick="authMode = 'register'; renderCurrentView();" class="py-2.5 rounded-xl transition-all ${authMode === 'register' ? 'bg-white text-agro-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">
-              Créer un compte
-            </button>
-          </div>
-
-          <!-- Auth Forms -->
-          <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-md">
-            ${authMode === 'login' ? `
-              <form onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Numéro de Téléphone</label>
-                  <div class="relative">
-                    <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="tel" id="login-phone" required value="670053957" placeholder="Ex: 670053957" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+        <KeyboardAvoidingView behavior="height" style="flex:1; width:100%; min-height:100%;">
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle="flexGrow:1, paddingBottom:150" class="keyboard-scroll-view" style="flex-grow:1; padding-bottom:150px; width:100%;">
+            <div class="min-h-screen bg-gradient-to-br from-agro-900 via-agro-800 to-emerald-950 px-4 py-8 flex flex-col justify-center">
+              <div class="max-w-md w-full mx-auto space-y-6 my-auto">
+                <!-- Logo & Titre ProdSuivi PRO V3 (5 taps pour accès développeur) -->
+                <div onclick="handleLogoTap()" class="text-center space-y-2 cursor-pointer select-none active:scale-[0.98] transition-transform" title="ProdSuivi PRO V3">
+                  <div class="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-md text-white flex items-center justify-center mx-auto shadow-2xl border-2 border-white/20">
+                    <i data-lucide="container" class="w-10 h-10 text-emerald-300"></i>
                   </div>
+                  <h2 class="text-2xl font-black text-white tracking-tight">ProdSuivi PRO <span class="text-emerald-400">V3</span></h2>
+                  <p class="text-xs text-emerald-100/80 max-w-xs mx-auto">Plateforme de Suivi Agro-Logistique Alimentaire & Traçabilité Export Maritime</p>
                 </div>
 
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe</label>
-                  <div class="relative">
-                    <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="password" id="login-password" required value="password123" placeholder="Votre mot de passe" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
-                  </div>
-                </div>
-
-                <button type="submit" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2">
-                  <i data-lucide="log-in" class="w-4 h-4"></i>
-                  <span>Se connecter</span>
-                </button>
-
-                <div class="pt-3 border-t border-slate-100">
-                  <button type="button" onclick="quickLoginDemo()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center space-x-2 border border-emerald-200">
-                    <i data-lucide="user-check" class="w-4 h-4"></i>
-                    <span>Connexion Rapide (AUDRIAN Ronis)</span>
+                <!-- Onglets d'authentification -->
+                <div class="bg-black/20 backdrop-blur-md p-1.5 rounded-2xl grid grid-cols-2 text-xs font-bold border border-white/10">
+                  <button onclick="authMode = 'login'; renderCurrentView();" class="py-2.5 rounded-xl transition-all ${authMode === 'login' ? 'bg-white text-agro-900 shadow-md' : 'text-white/70 hover:text-white'}">
+                    Connexion
+                  </button>
+                  <button onclick="authMode = 'register'; renderCurrentView();" class="py-2.5 rounded-xl transition-all ${authMode === 'register' ? 'bg-white text-agro-900 shadow-md' : 'text-white/70 hover:text-white'}">
+                    Créer un compte
                   </button>
                 </div>
-              </form>
-            ` : `
-              <form onsubmit="handleRegister(event)" class="space-y-3.5">
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom et Prénom *</label>
-                  <div class="relative">
-                    <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="text" id="reg-name" required placeholder="Ex: AUDRIAN Ronis" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
-                  </div>
+
+                <!-- Formulaire -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xl">
+                  ${authMode === 'login' ? `
+                    <form onsubmit="handleLogin(event)" class="space-y-4">
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">NUMÉRO DE TÉLÉPHONE</label>
+                        <div class="relative">
+                          <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                          <input type="tel" id="login-phone" required placeholder="Numéro de téléphone" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">MOT DE PASSE</label>
+                        <div class="relative">
+                          <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                          <input type="password" id="login-password" required placeholder="Votre mot de passe" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                        </div>
+                      </div>
+
+                      <button type="submit" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                        <span>Se connecter</span>
+                      </button>
+
+                      <!-- Bouton Connexion Rapide (AUDRIAN Ronis) masqué avec style="display: none;" -->
+                      <div class="pt-3 border-t border-slate-100" style="display: none;">
+                        <button type="button" onclick="connexionRapide()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center space-x-2 border border-emerald-200">
+                          <i data-lucide="user-check" class="w-4 h-4"></i>
+                          <span>Connexion Rapide (AUDRIAN Ronis)</span>
+                        </button>
+                      </div>
+                    </form>
+                  ` : `
+                    <form onsubmit="handleRegister(event)" class="space-y-3.5">
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom et Prénom *</label>
+                        <div class="relative">
+                          <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                          <input type="text" id="reg-name" required placeholder="Ex: Jean Dupont" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Numéro de Téléphone *</label>
+                        <div class="relative">
+                          <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                          <input type="tel" id="reg-phone" required placeholder="Ex: 6XXXXXXXX" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
+                        <div class="relative">
+                          <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                          <input type="password" id="reg-password" required minlength="4" placeholder="Choisissez un mot de passe" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
+                        </div>
+                      </div>
+
+                      <button type="submit" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>Créer mon compte</span>
+                      </button>
+                    </form>
+                  `}
                 </div>
 
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Numéro de Téléphone *</label>
-                  <div class="relative">
-                    <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="tel" id="reg-phone" required placeholder="Ex: 670053957" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
-                  </div>
+                <div class="p-3.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 text-center">
+                  <p class="text-[11px] text-emerald-100 font-medium">
+                    Chaque utilisateur accède à ses conteneurs produits et à son historique officiel certifié pour l'export.
+                  </p>
                 </div>
-
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
-                  <div class="relative">
-                    <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="password" id="reg-password" required minlength="4" placeholder="Choisissez un mot de passe" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-agro-500" />
-                  </div>
-                </div>
-
-                <button type="submit" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2">
-                  <i data-lucide="user-plus" class="w-4 h-4"></i>
-                  <span>Créer mon compte</span>
-                </button>
-              </form>
-            `}
-          </div>
-
-          <div class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
-            <p class="text-[11px] text-emerald-800 font-medium">
-              Chaque utilisateur accède à ses conteneurs produits et à son historique officiel certifié pour l'export.
-            </p>
-          </div>
-        </div>
+              </div>
+            </div>
+          </ScrollView>
+        </KeyboardAvoidingView>
       `;
     }
 
     function handleLogin(e) {
       e.preventDefault();
-      const phone = document.getElementById("login-phone").value.trim();
-      const pass = document.getElementById("login-password").value.trim();
+      const phoneInput = document.getElementById("login-phone");
+      const passInput = document.getElementById("login-password");
+      const phone = phoneInput ? phoneInput.value.trim() : "";
+      const pass = passInput ? passInput.value.trim() : "";
+
+      if (appUsers.length === 0) {
+        alert("Aucun compte enregistré dans l'application. Veuillez créer un compte.");
+        authMode = 'register';
+        renderCurrentView();
+        return;
+      }
 
       const user = appUsers.find(u => u.phone === phone);
       if (!user) {
@@ -557,13 +932,6 @@
       navigateTo('dashboard');
     }
 
-    function quickLoginDemo() {
-      const u = appUsers[0] || DEFAULT_USERS[0];
-      saveCurrentAuthUser(u);
-      showToast(`Connecté en tant que ${u.name}`);
-      navigateTo('dashboard');
-    }
-
     function handleLogout() {
       if (confirm("Voulez-vous vous déconnecter de votre compte ?")) {
         saveCurrentAuthUser(null);
@@ -601,11 +969,11 @@
           <div class="bg-gradient-to-br from-agro-800 to-agro-900 text-white rounded-3xl p-5 shadow-lg">
             <div class="flex items-center space-x-3 mb-2">
               <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center font-bold text-agro-200">
-                ${currentAuthUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                ${(currentAuthUser && currentAuthUser.name) ? currentAuthUser.name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'U'}
               </div>
               <div>
                 <span class="text-xs uppercase font-semibold text-agro-300">Port de Douala • Export Maritime</span>
-                <h2 class="text-xl font-extrabold">Bonjour, ${currentAuthUser.name}</h2>
+                <h2 class="text-xl font-extrabold">Bonjour, ${escapeHtml(currentAuthUser ? currentAuthUser.name : 'Utilisateur')}</h2>
               </div>
             </div>
             <p class="text-xs text-agro-100 leading-relaxed mt-1 font-normal">
@@ -679,7 +1047,7 @@
               </div>
               <div class="flex items-center justify-between">
                 <div>
-                  <h3 class="font-extrabold text-base text-slate-900">${first.name}</h3>
+                  <h3 class="font-extrabold text-base text-slate-900">${escapeHtml(first.name)}</h3>
                   <p class="text-xs text-slate-500 font-medium">Objectif: ${(getContainerStats(first).totalObjKg).toFixed(0)} Kg • Réalisé: ${(getContainerStats(first).totalKg).toFixed(1)} Kg (${getContainerStats(first).fillRate.toFixed(1)}%)</p>
                 </div>
                 <button onclick="navigateTo('container-detail', '${first.id}')" class="px-3 py-1.5 bg-agro-50 text-agro-800 rounded-xl text-xs font-bold flex items-center space-x-1">
@@ -688,7 +1056,19 @@
                 </button>
               </div>
             </div>
-          ` : ''}
+          ` : `
+            <div class="bg-white rounded-2xl p-6 border border-dashed border-slate-200 text-center space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center mx-auto">
+                <i data-lucide="package-open" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-slate-800 text-xs">Aucun conteneur actif</h4>
+              <p class="text-[11px] text-slate-400">L'application est prête. Créez votre premier conteneur pour débuter.</p>
+              <button onclick="openNewContainerModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-agro-800 text-white font-bold rounded-xl text-xs hover:bg-agro-900 shadow-sm mt-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Nouveau conteneur</span>
+              </button>
+            </div>
+          `}
         </div>
       `;
     }
@@ -704,30 +1084,45 @@
       });
 
       host.innerHTML = `
-        <div class="px-4 py-5 space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-xl font-extrabold text-slate-900">Conteneurs Clients</h2>
-              <p class="text-xs text-slate-500">Expéditions et suivi par objectif</p>
-            </div>
-            <span class="px-2.5 py-1 bg-agro-100 text-agro-800 text-xs font-bold rounded-full">
-              ${list.length} dossier${list.length > 1 ? 's' : ''}
-            </span>
-          </div>
+        <KeyboardAvoidingView behavior="height" style="flex:1; width:100%;">
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle="flexGrow:1, paddingBottom:150" class="keyboard-scroll-view" style="flex-grow:1; padding-bottom:150px; width:100%;">
+            <div class="px-4 py-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-xl font-extrabold text-slate-900">Conteneurs Clients</h2>
+                  <p class="text-xs text-slate-500">Expéditions et suivi par objectif</p>
+                </div>
+                <span class="px-2.5 py-1 bg-agro-100 text-agro-800 text-xs font-bold rounded-full">
+                  ${list.length} dossier${list.length > 1 ? 's' : ''}
+                </span>
+              </div>
 
-          <div class="relative">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-            <input 
-              type="text" 
-              value="${escapeHtml(containerSearchQuery)}"
-              oninput="containerSearchQuery = this.value; renderCurrentView();"
-              placeholder="Rechercher un conteneur client (Ex: Sango...)" 
-              class="w-full bg-white border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agro-500 shadow-sm"
-            />
-          </div>
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                <input 
+                  type="text" 
+                  value="${escapeHtml(containerSearchQuery)}"
+                  oninput="containerSearchQuery = this.value; renderCurrentView();"
+                  onfocus="ensureInputVisible(this)"
+                  placeholder="Rechercher un conteneur client (Ex: Sango...)" 
+                  class="w-full bg-white border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agro-500 shadow-sm"
+                />
+              </div>
 
           <div class="space-y-3">
-            ${list.map(c => {
+            ${list.length === 0 ? `
+              <div class="bg-white rounded-3xl p-8 border border-dashed border-slate-200 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mx-auto">
+                  <i data-lucide="package-open" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-sm">Aucun conteneur enregistré</h3>
+                <p class="text-xs text-slate-400 max-w-xs mx-auto">L'application est actuellement vide. Cliquez sur le bouton + pour créer votre premier conteneur client.</p>
+                <button onclick="openNewContainerModal()" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-agro-800 text-white font-bold rounded-xl text-xs hover:bg-agro-900 shadow-sm">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>Créer un conteneur</span>
+                </button>
+              </div>
+            ` : list.map(c => {
               const s = getContainerStats(c);
               return `
                 <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
@@ -760,9 +1155,11 @@
           </div>
         </div>
 
-        <button onclick="openNewContainerModal()" class="fixed bottom-20 right-5 w-14 h-14 bg-agro-800 hover:bg-agro-900 active:scale-95 text-white rounded-2xl shadow-xl flex items-center justify-center z-30">
-          <i data-lucide="plus" class="w-7 h-7"></i>
-        </button>
+            <button onclick="openNewContainerModal()" class="fixed bottom-20 right-5 w-14 h-14 bg-agro-800 hover:bg-agro-900 active:scale-95 text-white rounded-2xl shadow-xl flex items-center justify-center z-30">
+              <i data-lucide="plus" class="w-7 h-7"></i>
+            </button>
+          </ScrollView>
+        </KeyboardAvoidingView>
       `;
     }
 
@@ -817,170 +1214,216 @@
       });
 
       host.innerHTML = `
-        <div class="space-y-4">
-          <div class="bg-agro-800 text-white px-4 py-4 rounded-b-3xl shadow-md">
-            <div class="flex items-center justify-between mb-3">
-              <button onclick="navigateTo('containers')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
-              </button>
-              <div class="text-center px-2 flex-1">
-                <h2 class="font-extrabold text-base tracking-tight truncate">${escapeHtml(container.name)}</h2>
-                <div class="text-[11px] text-agro-200">Produit par : ${escapeHtml(container.producerName || currentAuthUser.name)}</div>
-              </div>
-              <div class="flex items-center space-x-1.5">
-                <button onclick="toggleContainerLock('${container.id}')" title="Verrouillage" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                  <i data-lucide="${container.closed ? 'lock' : 'unlock'}" class="w-4 h-4 text-white"></i>
-                </button>
-                <button onclick="generateContainerPDF_V3('${container.id}')" title="Export PDF" class="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
-                  <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Carte Statut Chargement -->
-            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/15">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs uppercase font-bold tracking-wider ${container.closed ? 'text-red-300' : 'text-emerald-300'}">
-                  ${container.closed ? '● DOSSIER CLÔTURÉ' : '● SUIVI DE CHARGEMENT ACTIF'}
-                </span>
-                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${container.closed ? 'bg-red-500/20 text-red-200' : 'bg-emerald-500/20 text-emerald-200'}">
-                  ${container.closed ? 'Fermé' : 'Ouvert'}
-                </span>
-              </div>
-              <div class="grid grid-cols-3 gap-2 text-center pt-1 border-t border-white/10">
-                <div>
-                  <div class="text-[10px] text-agro-200">Tonnage Réalisé</div>
-                  <div class="text-xs font-black text-white mt-0.5">${stats.totalTonnes.toFixed(3)} T</div>
-                  <div class="text-[9px] text-agro-300">(${stats.totalKg.toFixed(1)} Kg)</div>
+        <KeyboardAvoidingView behavior="height" style="flex:1; width:100%;">
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle="flexGrow:1, paddingBottom:150" class="keyboard-scroll-view" style="flex-grow:1; padding-bottom:150px; width:100%;">
+            <div class="space-y-4">
+              <div class="bg-agro-800 text-white px-4 py-4 rounded-b-3xl shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                  <button onclick="navigateTo('containers')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
+                  </button>
+                  <div class="text-center px-2 flex-1">
+                    <h2 class="font-extrabold text-base tracking-tight truncate">${escapeHtml(container.name)}</h2>
+                    <div class="text-[11px] text-agro-200">Produit par : ${escapeHtml(container.producerName || currentAuthUser.name)}</div>
+                  </div>
+                  <div class="flex items-center space-x-1.5">
+                    <button onclick="toggleContainerLock('${container.id}')" title="Verrouillage" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                      <i data-lucide="${container.closed ? 'lock' : 'unlock'}" class="w-4 h-4 text-white"></i>
+                    </button>
+                    <button onclick="generateContainerPDF_V3('${container.id}')" title="Export PDF" class="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+                      <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <div class="text-[10px] text-agro-200">Total Cartons</div>
-                  <div class="text-xs font-black text-amber-300 mt-0.5">${stats.totalCartons.toFixed(1)} Ctn</div>
-                  <div class="text-[9px] text-agro-300">Remplissage: ${stats.fillRate.toFixed(1)}%</div>
-                </div>
-                <div>
-                  <div class="text-[10px] text-agro-200">Éléments</div>
-                  <div class="text-xs font-black text-white mt-0.5">${stats.itemsCount}</div>
-                  <div class="text-[9px] text-agro-300">Obj: ${(stats.totalObjKg/1000).toFixed(2)} T</div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div class="px-4 space-y-3 pb-8">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-sm font-extrabold text-slate-900">Éléments et Produits</h3>
-                <p class="text-[11px] text-slate-400">Objectifs & progression visuelle en temps réel</p>
-              </div>
-              <div class="flex items-center space-x-1.5">
-                <button onclick="generateContainerPDF_V3('${container.id}')" class="px-2.5 py-1.5 bg-agro-700 hover:bg-agro-800 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm">
-                  <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                  <span>Rapport PDF</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Barre de recherche produits -->
-            <div class="relative">
-              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
-              <input 
-                type="text" 
-                value="${escapeHtml(productSearchQuery)}"
-                oninput="productSearchQuery = this.value; renderCurrentView();"
-                placeholder="Filtrer un aliment (Ndolé, Bobolo, Ugu...)" 
-                class="w-full bg-white border border-slate-200 pl-9 pr-3 py-2 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-agro-500 shadow-sm"
-              />
-            </div>
-
-            <!-- Liste des produits avec logique de couleur stricte -->
-            <div class="space-y-3">
-              ${productsWithProg.length === 0 ? `
-                <div class="bg-white rounded-2xl p-6 text-center text-slate-400 text-xs border border-slate-100">
-                  Aucun aliment trouvé. Cliquez sur "+ Ajouter un produit".
-                </div>
-              ` : productsWithProg.map(p => {
-                let cardBg = "#f1f5f9";
-                let cardBorder = "#cbd5e1";
-                let badgeClass = "bg-slate-200 text-slate-700";
-                let badgeText = `En cours ${p.progression.toFixed(0)}%`;
-                let iconHtml = `<i data-lucide="clock" class="w-3.5 h-3.5 mr-1"></i>`;
-                let titleStyle = "text-slate-900";
-
-                if (p.progression >= 100) {
-                  cardBg = "#dcfce7";
-                  cardBorder = "#16a34a";
-                  badgeClass = "bg-emerald-600 text-white font-bold";
-                  badgeText = `Objectif atteint 100%`;
-                  iconHtml = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i>`;
-                  titleStyle = "text-emerald-950 line-through decoration-emerald-600/60";
-                } else if (p.progression >= 80) {
-                  cardBg = "#fff7ed";
-                  cardBorder = "#f97316";
-                  badgeClass = "bg-orange-100 text-orange-800 border border-orange-300";
-                  badgeText = `Presque fini ${p.progression.toFixed(0)}%`;
-                  iconHtml = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1"></i>`;
-                }
-
-                const barWidth = Math.min(100, Math.max(0, p.progression));
-                const barColor = p.progression >= 100 ? 'bg-emerald-600' : (p.progression >= 80 ? 'bg-orange-500' : 'bg-slate-500');
-
-                return `
-                  <div style="background-color: ${cardBg}; border: 1.5px solid ${cardBorder};" class="rounded-2xl p-3.5 shadow-sm transition-all">
-                    <div class="flex items-start justify-between">
-                      <div class="flex-1 cursor-pointer" onclick="navigateTo('product-detail', '${container.id}', '${p.id}')">
-                        <div class="flex items-center space-x-2">
-                          <h4 class="font-extrabold text-sm ${titleStyle}">${escapeHtml(p.name)}</h4>
-                          <span class="px-2 py-0.5 text-[9px] rounded-full flex items-center font-bold ${badgeClass}">
-                            ${iconHtml}
-                            <span>${badgeText}</span>
-                          </span>
-                        </div>
-                        
-                        <div class="mt-1 text-xs font-bold text-slate-800">
-                          Masse: <span class="text-agro-800">${p.mass.toFixed(1)} Kg</span> / Objectif: <span class="text-slate-600">${p.obj.toFixed(0)} Kg</span>
-                          <span class="text-slate-400 font-normal ml-1">(${(p.mass/1000).toFixed(2)} T)</span>
-                          <span class="text-amber-600 ml-2">Cartons: ${p.cartons.toFixed(1)}</span>
-                        </div>
-
-                        <!-- Barre de progression fine (0 à 100%) -->
-                        <div class="w-full bg-slate-200/80 h-1.5 rounded-full mt-2 overflow-hidden">
-                          <div class="${barColor} h-full rounded-full transition-all duration-300" style="width: ${barWidth}%;"></div>
-                        </div>
-
-                        <div class="flex items-center space-x-2 text-[11px] text-slate-500 mt-2 font-medium">
-                          <span>Config: ${p.pcsPerCarton} pces/ctn • ${p.cartonWeight.toFixed(1)} Kg</span>
-                          ${p.sealed ? `<span class="text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded text-[10px] font-semibold">Scellé</span>` : ''}
-                        </div>
-                      </div>
-
-                      <!-- 3 Boutons à droite : Edit, Delete, > pour détail -->
-                      <div class="flex items-center space-x-1 ml-2">
-                        <button onclick="openEditProductModal('${container.id}', '${p.id}')" title="Modifier" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center border border-slate-200 shadow-xs">
-                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="deleteProduct('${container.id}', '${p.id}')" title="Supprimer" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-red-100 text-red-600 flex items-center justify-center border border-slate-200 shadow-xs">
-                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="navigateTo('product-detail', '${container.id}', '${p.id}')" title="Détail pesées" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-slate-200 text-slate-700 flex items-center justify-center border border-slate-200 shadow-xs">
-                          <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                        </button>
-                      </div>
+                <!-- Carte Statut Chargement -->
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/15">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs uppercase font-bold tracking-wider ${container.closed ? 'text-red-300' : 'text-emerald-300'}">
+                      ${container.closed ? '● DOSSIER CLÔTURÉ' : '● SUIVI DE CHARGEMENT ACTIF'}
+                    </span>
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${container.closed ? 'bg-red-500/20 text-red-200' : 'bg-emerald-500/20 text-emerald-200'}">
+                      ${container.closed ? 'Fermé' : 'Ouvert'}
+                    </span>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 text-center pt-1 border-t border-white/10">
+                    <div>
+                      <div class="text-[10px] text-agro-200">Tonnage Réalisé</div>
+                      <div class="text-xs font-black text-white mt-0.5">${stats.totalTonnes.toFixed(3)} T</div>
+                      <div class="text-[9px] text-agro-300">(${stats.totalKg.toFixed(1)} Kg)</div>
+                    </div>
+                    <div>
+                      <div class="text-[10px] text-agro-200">Total Cartons</div>
+                      <div class="text-xs font-black text-amber-300 mt-0.5">${stats.totalCartons.toFixed(1)} Ctn</div>
+                      <div class="text-[9px] text-agro-300">Remplissage: ${stats.fillRate.toFixed(1)}%</div>
+                    </div>
+                    <div>
+                      <div class="text-[10px] text-agro-200">Éléments</div>
+                      <div class="text-xs font-black text-white mt-0.5">${stats.itemsCount}</div>
+                      <div class="text-[9px] text-agro-300">Obj: ${(stats.totalObjKg/1000).toFixed(2)} T</div>
                     </div>
                   </div>
-                `;
-              }).join('')}
+                </div>
+              </div>
+
+              <div class="px-4 space-y-3 pb-8">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-sm font-extrabold text-slate-900">Éléments et Produits</h3>
+                    <p class="text-[11px] text-slate-400">Objectifs & progression visuelle en temps réel</p>
+                  </div>
+                  <div class="flex items-center space-x-1.5">
+                    <button onclick="generateContainerPDF_V3('${container.id}')" class="px-2.5 py-1.5 bg-agro-700 hover:bg-agro-800 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm">
+                      <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                      <span>Rapport PDF</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Barre de recherche produits avec remontée fluide au-dessus du clavier -->
+                <div class="relative">
+                  <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
+                  <input 
+                    type="text" 
+                    id="filter-aliment-input"
+                    value="${escapeHtml(productSearchQuery)}"
+                    oninput="handleFilterAliments(this.value)"
+                    onfocus="ensureInputVisible(this)"
+                    placeholder="Filtrer un aliment (Ndolè, Bobolo...)" 
+                    class="w-full bg-white border border-slate-200 pl-9 pr-3 py-2 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-agro-500 shadow-sm"
+                  />
+                </div>
+
+                <!-- Liste des produits avec logique de couleur stricte -->
+                <div id="products-cards-list" class="space-y-3">
+                  ${renderProductsCardsHtml(productsWithProg, container)}
+                </div>
+              </div>
+
+              <!-- Bouton fixe en bas "+ Ajouter un produit" -->
+              <div class="fixed bottom-16 left-0 right-0 p-3 max-w-md mx-auto z-30">
+                <button onclick="openAddProductModal('${container.id}')" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-2xl shadow-xl flex items-center justify-center space-x-2 border border-white/20 transition-all">
+                  <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                  <span class="text-sm font-semibold">+ Ajouter un produit</span>
+                </button>
+              </div>
+            </div>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      `;
+    }
+
+    function renderProductsCardsHtml(productsWithProg, container) {
+      if (productsWithProg.length === 0) {
+        return `
+          <div class="bg-white rounded-2xl p-6 text-center text-slate-400 text-xs border border-slate-100">
+            Aucun aliment trouvé. Cliquez sur "+ Ajouter un produit".
+          </div>
+        `;
+      }
+      return productsWithProg.map(p => {
+        let cardBg = "#f1f5f9";
+        let cardBorder = "#cbd5e1";
+        let badgeClass = "bg-slate-200 text-slate-700";
+        let badgeText = `En cours ${p.progression.toFixed(0)}%`;
+        let iconHtml = `<i data-lucide="clock" class="w-3.5 h-3.5 mr-1"></i>`;
+        let titleStyle = "text-slate-900";
+
+        if (p.progression >= 100) {
+          cardBg = "#dcfce7";
+          cardBorder = "#16a34a";
+          badgeClass = "bg-emerald-600 text-white font-bold";
+          badgeText = `Objectif atteint 100%`;
+          iconHtml = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i>`;
+          titleStyle = "text-emerald-950 line-through decoration-emerald-600/60";
+        } else if (p.progression >= 80) {
+          cardBg = "#fff7ed";
+          cardBorder = "#f97316";
+          badgeClass = "bg-orange-100 text-orange-800 border border-orange-300";
+          badgeText = `Presque fini ${p.progression.toFixed(0)}%`;
+          iconHtml = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1"></i>`;
+        }
+
+        const barWidth = Math.min(100, Math.max(0, p.progression));
+        const barColor = p.progression >= 100 ? 'bg-emerald-600' : (p.progression >= 80 ? 'bg-orange-500' : 'bg-slate-500');
+
+        return `
+          <div style="background-color: ${cardBg}; border: 1.5px solid ${cardBorder};" class="rounded-2xl p-3.5 shadow-sm transition-all">
+            <div class="flex items-start justify-between">
+              <div class="flex-1 cursor-pointer" onclick="navigateTo('product-detail', '${container.id}', '${p.id}')">
+                <div class="flex items-center space-x-2">
+                  <h4 class="font-extrabold text-sm ${titleStyle}">${escapeHtml(p.name)}</h4>
+                  <span class="px-2 py-0.5 text-[9px] rounded-full flex items-center font-bold ${badgeClass}">
+                    ${iconHtml}
+                    <span>${badgeText}</span>
+                  </span>
+                </div>
+                
+                <div class="mt-1 text-xs font-bold text-slate-800">
+                  Masse: <span class="text-agro-800">${p.mass.toFixed(1)} Kg</span> / Objectif: <span class="text-slate-600">${p.obj.toFixed(0)} Kg</span>
+                  <span class="text-slate-400 font-normal ml-1">(${(p.mass/1000).toFixed(2)} T)</span>
+                  <span class="text-amber-600 ml-2">Cartons: ${p.cartons.toFixed(1)}</span>
+                </div>
+
+                <!-- Barre de progression fine (0 à 100%) -->
+                <div class="w-full bg-slate-200/80 h-1.5 rounded-full mt-2 overflow-hidden">
+                  <div class="${barColor} h-full rounded-full transition-all duration-300" style="width: ${barWidth}%;"></div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-[11px] text-slate-500 mt-2 font-medium">
+                  <span>Config: ${p.pcsPerCarton} pces/ctn • ${p.cartonWeight.toFixed(1)} Kg</span>
+                  ${p.sealed ? `<span class="text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded text-[10px] font-semibold">Scellé</span>` : ''}
+                </div>
+              </div>
+
+              <!-- 3 Boutons à droite : Edit, Delete, > pour détail -->
+              <div class="flex items-center space-x-1 ml-2">
+                <button onclick="openEditProductModal('${container.id}', '${p.id}')" title="Modifier" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center border border-slate-200 shadow-xs">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deleteProduct('${container.id}', '${p.id}')" title="Supprimer" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-red-100 text-red-600 flex items-center justify-center border border-slate-200 shadow-xs">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="navigateTo('product-detail', '${container.id}', '${p.id}')" title="Détail pesées" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-slate-200 text-slate-700 flex items-center justify-center border border-slate-200 shadow-xs">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+              </div>
             </div>
           </div>
+        `;
+      }).join('');
+    }
 
-          <!-- Bouton fixe en bas "+ Ajouter un produit" -->
-          <div class="fixed bottom-16 left-0 right-0 p-3 max-w-md mx-auto z-30">
-            <button onclick="openAddProductModal('${container.id}')" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-2xl shadow-xl flex items-center justify-center space-x-2 border border-white/20 transition-all">
-              <i data-lucide="plus-circle" class="w-5 h-5"></i>
-              <span class="text-sm font-semibold">+ Ajouter un produit</span>
-            </button>
-          </div>
-        </div>
+    function handleFilterAliments(val) {
+      productSearchQuery = val;
+      const listEl = document.getElementById("products-cards-list");
+      const container = appContainers.find(c => c.id === currentContainerId);
+      if (listEl && container) {
+        let prods = container.products.map(p => {
+          const mass = parseFloat(p.mass) || 0;
+          const obj = parseFloat(p.objectifKg) || mass || 1;
+          const ctnW = parseFloat(p.cartonWeight) || 1;
+          const cartons = mass / ctnW;
+          const progression = obj > 0 ? (mass / obj) * 100 : 0;
+          const isCompleted = mass >= obj;
+          return { ...p, mass, obj, ctnW, cartons, progression, isCompleted };
+        });
+        if (val.trim()) {
+          const q = val.toLowerCase();
+          prods = prods.filter(p => p.name.toLowerCase().includes(q));
+        }
+        prods.sort((a, b) => {
+          if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+          return a.progression - b.progression;
+        });
+        listEl.innerHTML = renderProductsCardsHtml(prods, container);
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
+      } else {
+        renderCurrentView();
+      }
+    }
       `;
     }
 
@@ -1015,126 +1458,130 @@
       const isCompleted = totalKg >= obj;
 
       host.innerHTML = `
-        <div class="space-y-4 pb-28">
-          <div class="bg-agro-800 text-white px-4 py-4 rounded-b-3xl shadow-md">
-            <div class="flex items-center justify-between mb-3">
-              <button onclick="navigateTo('container-detail', '${container.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
-              </button>
-              <div class="text-center px-2 flex-1">
-                <h2 class="font-extrabold text-base tracking-tight">${escapeHtml(product.name)}</h2>
-                <div class="text-[11px] text-agro-200">${escapeHtml(container.name)}</div>
-              </div>
-              <button onclick="openEditProductModal('${container.id}', '${product.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                <i data-lucide="edit-3" class="w-4 h-4 text-white"></i>
-              </button>
-            </div>
-
-            <!-- Progression & Statut Objectif -->
-            <div class="bg-white/10 rounded-2xl p-3 border border-white/15">
-              <div class="flex items-center justify-between text-xs font-bold mb-1">
-                <span>Objectif de départ : ${obj.toFixed(0)} Kg</span>
-                <span class="${isCompleted ? 'text-emerald-300' : 'text-amber-300'}">${prog.toFixed(1)}% ${isCompleted ? '✅ ATTEINT' : 'EN COURS'}</span>
-              </div>
-              <div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                <div class="${isCompleted ? 'bg-emerald-400' : 'bg-amber-400'} h-full rounded-full" style="width: ${Math.min(100, prog)}%;"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="px-4 space-y-4">
-            <!-- Carte "Données d'emballage du produit" -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-                <i data-lucide="package-search" class="w-4 h-4 text-agro-700"></i>
-                <span>Données d'emballage du produit</span>
-              </h3>
-              <div class="grid grid-cols-3 gap-2 text-center">
-                <div class="bg-slate-50 rounded-xl p-2.5">
-                  <div class="text-[10px] text-slate-400 font-semibold">Poids unitaire</div>
-                  <div class="text-sm font-extrabold text-slate-800">${parseFloat(product.pcWeight || 1).toFixed(1)} Kg</div>
+        <KeyboardAvoidingView behavior="height" style="flex:1; width:100%;">
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle="flexGrow:1, paddingBottom:150" class="keyboard-scroll-view" style="flex-grow:1; padding-bottom:150px; width:100%;">
+            <div class="space-y-4">
+              <div class="bg-agro-800 text-white px-4 py-4 rounded-b-3xl shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                  <button onclick="navigateTo('container-detail', '${container.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
+                  </button>
+                  <div class="text-center px-2 flex-1">
+                    <h2 class="font-extrabold text-base tracking-tight">${escapeHtml(product.name)}</h2>
+                    <div class="text-[11px] text-agro-200">${escapeHtml(container.name)}</div>
+                  </div>
+                  <button onclick="openEditProductModal('${container.id}', '${product.id}')" class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-white"></i>
+                  </button>
                 </div>
-                <div class="bg-slate-50 rounded-xl p-2.5">
-                  <div class="text-[10px] text-slate-400 font-semibold">Quantité/Carton</div>
-                  <div class="text-sm font-extrabold text-slate-800">${product.pcsPerCarton || 20} pces</div>
-                </div>
-                <div class="bg-slate-50 rounded-xl p-2.5">
-                  <div class="text-[10px] text-slate-400 font-semibold">Poids d'un carton</div>
-                  <div class="text-sm font-extrabold text-agro-800">${parseFloat(product.cartonWeight || 20).toFixed(1)} Kg</div>
+
+                <!-- Progression & Statut Objectif -->
+                <div class="bg-white/10 rounded-2xl p-3 border border-white/15">
+                  <div class="flex items-center justify-between text-xs font-bold mb-1">
+                    <span>Objectif de départ : ${obj.toFixed(0)} Kg</span>
+                    <span class="${isCompleted ? 'text-emerald-300' : 'text-amber-300'}">${prog.toFixed(1)}% ${isCompleted ? '✅ ATTEINT' : 'EN COURS'}</span>
+                  </div>
+                  <div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+                    <div class="${isCompleted ? 'bg-emerald-400' : 'bg-amber-400'} h-full rounded-full" style="width: ${Math.min(100, prog)}%;"></div>
+                  </div>
                 </div>
               </div>
-              ${product.desc ? `<p class="text-xs text-slate-500 italic mt-1">${escapeHtml(product.desc)}</p>` : ''}
-            </div>
 
-            <!-- Section "Chronologie des pesées" -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-                  <i data-lucide="scale" class="w-4 h-4 text-agro-700"></i>
-                  <span>Chronologie des pesées (${weighings.length})</span>
-                </h3>
-              </div>
-
-              <div class="space-y-2">
-                ${weighings.length === 0 ? `
-                  <div class="text-center py-4 text-xs text-slate-400">Aucune pesée enregistrée.</div>
-                ` : weighings.map((w, idx) => `
-                  <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <div class="flex items-center space-x-2">
-                      <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">
-                        #${idx + 1}
-                      </span>
-                      <div>
-                        <div class="text-xs font-bold text-slate-800">${parseFloat(w.mass).toFixed(1)} Kg</div>
-                        <div class="text-[10px] text-slate-400">Date: ${w.date || '05/10/2026'}</div>
-                      </div>
+              <div class="px-4 space-y-4">
+                <!-- Carte "Données d'emballage du produit" -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+                  <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                    <i data-lucide="package-search" class="w-4 h-4 text-agro-700"></i>
+                    <span>Données d'emballage du produit</span>
+                  </h3>
+                  <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-slate-50 rounded-xl p-2.5">
+                      <div class="text-[10px] text-slate-400 font-semibold">Poids unitaire</div>
+                      <div class="text-sm font-extrabold text-slate-800">${parseFloat(product.pcWeight || 1).toFixed(1)} Kg</div>
                     </div>
-                    <div class="flex items-center space-x-1">
-                      <button onclick="editWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg text-emerald-700 hover:bg-emerald-50 flex items-center justify-center">
-                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-                      </button>
-                      <button onclick="deleteWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center">
-                        <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                    <div class="bg-slate-50 rounded-xl p-2.5">
+                      <div class="text-[10px] text-slate-400 font-semibold">Quantité/Carton</div>
+                      <div class="text-sm font-extrabold text-slate-800">${product.pcsPerCarton || 20} pces</div>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2.5">
+                      <div class="text-[10px] text-slate-400 font-semibold">Poids d'un carton</div>
+                      <div class="text-sm font-extrabold text-agro-800">${parseFloat(product.cartonWeight || 20).toFixed(1)} Kg</div>
+                    </div>
+                  </div>
+                  ${product.desc ? `<p class="text-xs text-slate-500 italic mt-1">${escapeHtml(product.desc)}</p>` : ''}
+                </div>
+
+                <!-- Section "Chronologie des pesées" -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                      <i data-lucide="scale" class="w-4 h-4 text-agro-700"></i>
+                      <span>Chronologie des pesées (${weighings.length})</span>
+                    </h3>
+                  </div>
+
+                  <div class="space-y-2">
+                    ${weighings.length === 0 ? `
+                      <div class="text-center py-4 text-xs text-slate-400">Aucune pesée enregistrée.</div>
+                    ` : weighings.map((w, idx) => `
+                      <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="flex items-center space-x-2">
+                          <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">
+                            #${idx + 1}
+                          </span>
+                          <div>
+                            <div class="text-xs font-bold text-slate-800">${parseFloat(w.mass).toFixed(1)} Kg</div>
+                            <div class="text-[10px] text-slate-400">Date: ${w.date || '05/10/2026'}</div>
+                          </div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                          <button onclick="editWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg text-emerald-700 hover:bg-emerald-50 flex items-center justify-center">
+                            <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                          </button>
+                          <button onclick="deleteWeighing('${container.id}', '${product.id}', ${idx})" class="w-7 h-7 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center">
+                            <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                          </button>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                  <!-- Footer avec TOTAL KILOS et TOTAL CARTONS -->
+                  <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-emerald-50 rounded-xl p-2.5">
+                      <div class="text-[10px] uppercase font-bold text-emerald-800">TOTAL KILOS</div>
+                      <div class="text-base font-extrabold text-emerald-950">${totalKg.toFixed(1)} Kg</div>
+                      <div class="text-[10px] text-emerald-700">(${(totalKg/1000).toFixed(3)} Tonnes)</div>
+                    </div>
+                    <div class="bg-amber-50 rounded-xl p-2.5">
+                      <div class="text-[10px] uppercase font-bold text-amber-800">TOTAL CARTONS</div>
+                      <div class="text-base font-extrabold text-amber-950">${totalCartons.toFixed(1)} Ctn</div>
+                      <div class="text-[10px] text-amber-700">Standard ${product.cartonWeight} Kg</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Formulaire en bas : Date + Masse (Kg) + bouton + -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-md">
+                  <h4 class="text-xs font-bold text-slate-700 mb-2">+ Enregistrer une nouvelle pesée</h4>
+                  <div class="grid grid-cols-12 gap-2">
+                    <div class="col-span-5">
+                      <input type="date" id="new-weighing-date" value="${new Date().toISOString().split('T')[0]}" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+                    </div>
+                    <div class="col-span-5">
+                      <input type="number" id="new-weighing-mass" step="0.1" placeholder="Masse en Kg" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800" />
+                    </div>
+                    <div class="col-span-2">
+                      <button onclick="addWeighing('${container.id}', '${product.id}')" class="w-full h-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white rounded-xl flex items-center justify-center">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
                       </button>
                     </div>
                   </div>
-                `).join('')}
-              </div>
-
-              <!-- Footer avec TOTAL KILOS et TOTAL CARTONS -->
-              <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center">
-                <div class="bg-emerald-50 rounded-xl p-2.5">
-                  <div class="text-[10px] uppercase font-bold text-emerald-800">TOTAL KILOS</div>
-                  <div class="text-base font-extrabold text-emerald-950">${totalKg.toFixed(1)} Kg</div>
-                  <div class="text-[10px] text-emerald-700">(${(totalKg/1000).toFixed(3)} Tonnes)</div>
-                </div>
-                <div class="bg-amber-50 rounded-xl p-2.5">
-                  <div class="text-[10px] uppercase font-bold text-amber-800">TOTAL CARTONS</div>
-                  <div class="text-base font-extrabold text-amber-950">${totalCartons.toFixed(1)} Ctn</div>
-                  <div class="text-[10px] text-amber-700">Standard ${product.cartonWeight} Kg</div>
                 </div>
               </div>
             </div>
-
-            <!-- Formulaire en bas : Date + Masse (Kg) + bouton + -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-md">
-              <h4 class="text-xs font-bold text-slate-700 mb-2">+ Enregistrer une nouvelle pesée</h4>
-              <div class="grid grid-cols-12 gap-2">
-                <div class="col-span-5">
-                  <input type="date" id="new-weighing-date" value="${new Date().toISOString().split('T')[0]}" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
-                </div>
-                <div class="col-span-5">
-                  <input type="number" id="new-weighing-mass" step="0.1" placeholder="Masse en Kg" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800" />
-                </div>
-                <div class="col-span-2">
-                  <button onclick="addWeighing('${container.id}', '${product.id}')" class="w-full h-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white rounded-xl flex items-center justify-center">
-                    <i data-lucide="plus" class="w-5 h-5"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+          </ScrollView>
+        </KeyboardAvoidingView>
       `;
     }
 
@@ -1155,6 +1602,9 @@
 
       product.mass = product.weighings.reduce((acc, w) => acc + (parseFloat(w.mass) || 0), 0);
       saveContainers();
+      if (window.AndroidBridge && typeof window.AndroidBridge.updateActiveContainer === 'function') {
+        window.AndroidBridge.updateActiveContainer(JSON.stringify(container));
+      }
       showToast(`Pesée de ${val.toFixed(1)} Kg enregistrée !`);
       renderCurrentView();
     }
@@ -1211,10 +1661,10 @@
           <!-- User Identity Card -->
           <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-center relative overflow-hidden">
             <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-agro-800 to-agro-600 text-white flex items-center justify-center font-black text-2xl mx-auto shadow-md mb-3 border-4 border-white">
-              ${currentAuthUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+              ${(currentAuthUser && currentAuthUser.name) ? currentAuthUser.name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'U'}
             </div>
-            <h2 class="text-lg font-extrabold text-slate-900">${currentAuthUser.name}</h2>
-            <div class="text-xs text-agro-700 font-semibold">${currentAuthUser.role || 'Superviseur Export'}</div>
+            <h2 class="text-lg font-extrabold text-slate-900">${escapeHtml(currentAuthUser ? currentAuthUser.name : '')}</h2>
+            <div class="text-xs text-agro-700 font-semibold">${escapeHtml(currentAuthUser ? (currentAuthUser.role || 'Superviseur Export') : '')}</div>
 
             <!-- Badge Licence Active -->
             <div class="mt-2.5 inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full text-[11px] font-bold border border-emerald-200">
@@ -1225,11 +1675,11 @@
             <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-left text-xs">
               <div class="flex justify-between items-center">
                 <span class="text-slate-400 flex items-center space-x-1.5"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Téléphone :</span></span>
-                <span class="font-bold text-slate-800">${currentAuthUser.phone}</span>
+                <span class="font-bold text-slate-800">${escapeHtml(currentAuthUser ? currentAuthUser.phone : '')}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-slate-400 flex items-center space-x-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i><span>Inscrit le :</span></span>
-                <span class="font-semibold text-slate-700">${currentAuthUser.createdAt || '05/10/2026'}</span>
+                <span class="font-semibold text-slate-700">${escapeHtml(currentAuthUser ? (currentAuthUser.createdAt || '') : '')}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-slate-400 flex items-center space-x-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i><span>Base Export :</span></span>
@@ -1324,11 +1774,11 @@
 
           <!-- Actions Session -->
           <div class="space-y-2 pt-2">
-            <button onclick="resetData()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-xs flex items-center justify-center space-x-2">
-              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-              <span>Réinitialiser aux 20 aliments COMACAM SUARL</span>
+            <button onclick="clearAllContainers()" class="w-full bg-red-50 hover:bg-red-100 text-red-700 font-bold py-3 rounded-2xl text-xs flex items-center justify-center space-x-2 border border-red-200">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>Effacer tous les conteneurs enregistrés</span>
             </button>
-            <button onclick="handleLogout()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-md">
+            <button onclick="handleLogout()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-md">
               <i data-lucide="log-out" class="w-4 h-4"></i>
               <span>Se déconnecter de la session</span>
             </button>
@@ -1337,11 +1787,11 @@
       `;
     }
 
-    function resetData() {
-      if (confirm("Réinitialiser les conteneurs aux 20 aliments originaux COMACAM SUARL (26.978 T) ?")) {
-        appContainers = JSON.parse(JSON.stringify(DEFAULT_CONTAINERS));
+    function clearAllContainers() {
+      if (confirm("Voulez-vous vraiment effacer tous les conteneurs enregistrés ? L'application sera entièrement vide.")) {
+        appContainers = [];
         saveContainers();
-        showToast("Données 20 aliments réinitialisées");
+        showToast("Tous les conteneurs ont été effacés");
         renderCurrentView();
       }
     }
@@ -1349,27 +1799,47 @@
     // ==========================================
     // 6. RAPPORT PDF PROFESSIONNEL V3
     // ==========================================
-    function generateContainerPDF_V3(containerId) {
-      const container = appContainers.find(c => c.id === containerId);
-      if (!container) return;
+    function exportRapportPDF(selectedContainerId) {
+      return generatePDF(selectedContainerId);
+    }
 
-      if (window.AndroidBridge && typeof window.AndroidBridge.generatePdf === 'function') {
-        window.AndroidBridge.generatePdf(JSON.stringify(container));
+    function generatePDF(selectedContainerId) {
+      return generateContainerPDF_V3(selectedContainerId);
+    }
+
+    function generateContainerPDF_V3(selectedContainerId) {
+      // 1. Récupération du conteneur actif actuel (sans mock data)
+      let conteneurActif = null;
+      if (typeof selectedContainerId === 'object' && selectedContainerId !== null) {
+        conteneurActif = selectedContainerId;
+      } else if (typeof selectedContainerId === 'string' && selectedContainerId.trim() !== '') {
+        conteneurActif = appContainers.find(c => c.id === selectedContainerId);
+      }
+
+      if (!conteneurActif) {
+        const activeId = currentContainerId || (appContainers[0] ? appContainers[0].id : null);
+        conteneurActif = appContainers.find(c => c.id === activeId) || appContainers[0];
+      }
+
+      if (!conteneurActif) {
+        showToast("Veuillez d'abord sélectionner ou créer un conteneur.");
         return;
       }
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const nomConteneur = conteneurActif.nom || conteneurActif.name || "Conteneur";
+      const listeProduits = conteneurActif.listeProduits || conteneurActif.products || [];
 
+      // 2. Calcul dynamique strict de TOTAL OBJECTIF et TOTAL RÉALISÉ à partir de listeProduits
       let totalKg = 0;
       let totalObjKg = 0;
       let totalCartons = 0;
 
-      const tableRows = container.products.map((p, index) => {
-        const pMass = parseFloat(p.mass) || 0;
-        const pObj = parseFloat(p.objectifKg) || pMass || 1;
-        const pCtnW = parseFloat(p.cartonWeight) || 1;
-        const pCartons = pMass / pCtnW;
+      const tableRows = listeProduits.map((p, index) => {
+        const pNom = p.nom || p.name || `Produit ${index + 1}`;
+        const pMass = parseFloat(p.realise !== undefined ? p.realise : (p.mass !== undefined ? p.mass : (p.poids !== undefined ? p.poids : (p.weighings ? p.weighings.reduce((sum, w) => sum + (parseFloat(w.mass)||0), 0) : 0)))) || 0;
+        const pObj = parseFloat(p.objectif !== undefined ? p.objectif : (p.objectifKg !== undefined ? p.objectifKg : pMass)) || pMass || 1;
+        const pPoidsCtn = parseFloat(p.poidsCtn !== undefined ? p.poidsCtn : (p.cartonWeight !== undefined ? p.cartonWeight : 20.0)) || 20.0;
+        const pCartons = pPoidsCtn > 0 ? (pMass / pPoidsCtn) : 0;
         const ecart = pMass - pObj;
         const sign = ecart >= 0 ? "+" : "";
 
@@ -1378,12 +1848,12 @@
         totalCartons += pCartons;
 
         const isAtteint = pMass >= pObj;
-        const statusLabel = isAtteint ? "ATTEINT" : `EN COURS (${((pMass / pObj) * 100).toFixed(0)}%)`;
+        const statusLabel = isAtteint ? "ATTEINT" : `EN COURS (${pObj > 0 ? ((pMass / pObj) * 100).toFixed(0) : 0}%)`;
 
         return [
           index + 1,
-          p.name,
-          pCtnW.toFixed(1) + " kg",
+          pNom,
+          pPoidsCtn.toFixed(1) + " kg",
           pObj.toFixed(1) + " Kg",
           pMass.toFixed(1) + " Kg",
           sign + ecart.toFixed(1) + " Kg",
@@ -1392,9 +1862,53 @@
         ];
       });
 
-      const totalTonnes = totalKg / 1000.0;
-      const totalObjTonnes = totalObjKg / 1000.0;
+      const tonnageRealise = totalKg / 1000.0;
+      const tonnageObjectif = totalObjKg / 1000.0;
       const fillRate = totalObjKg > 0 ? (totalKg / totalObjKg) * 100 : 0;
+
+      // Payload synchronisé pour la passerelle AndroidBridge avec données réelles
+      const containerPayload = {
+        id: conteneurActif.id,
+        nom: nomConteneur,
+        name: nomConteneur,
+        tonnageRealise: tonnageRealise,
+        tonnageRealiseKg: totalKg,
+        tonnageObjectif: tonnageObjectif,
+        tonnageObjectifKg: totalObjKg,
+        totalCartons: totalCartons,
+        fillRate: fillRate,
+        closed: Boolean(conteneurActif.closed || conteneurActif.cloture),
+        producerName: conteneurActif.producerName || conteneurActif.producteur || conteneurActif.responsable || currentAuthUser?.name || 'Responsable Export',
+        producerPhone: conteneurActif.producerPhone || conteneurActif.telephone || currentAuthUser?.phone || '',
+        listeProduits: listeProduits.map(p => ({
+          nom: p.nom || p.name,
+          name: p.nom || p.name,
+          poidsCtn: parseFloat(p.poidsCtn || p.cartonWeight || 20),
+          cartonWeight: parseFloat(p.poidsCtn || p.cartonWeight || 20),
+          objectif: parseFloat(p.objectif || p.objectifKg || p.mass || 0),
+          objectifKg: parseFloat(p.objectif || p.objectifKg || p.mass || 0),
+          mass: parseFloat(p.mass !== undefined ? p.mass : (p.realise || 0)),
+          realise: parseFloat(p.mass !== undefined ? p.mass : (p.realise || 0))
+        })),
+        products: listeProduits.map(p => ({
+          nom: p.nom || p.name,
+          name: p.nom || p.name,
+          poidsCtn: parseFloat(p.poidsCtn || p.cartonWeight || 20),
+          cartonWeight: parseFloat(p.poidsCtn || p.cartonWeight || 20),
+          objectif: parseFloat(p.objectif || p.objectifKg || p.mass || 0),
+          objectifKg: parseFloat(p.objectif || p.objectifKg || p.mass || 0),
+          mass: parseFloat(p.mass !== undefined ? p.mass : (p.realise || 0)),
+          realise: parseFloat(p.mass !== undefined ? p.mass : (p.realise || 0))
+        }))
+      };
+
+      if (window.AndroidBridge && typeof window.AndroidBridge.generatePdf === 'function') {
+        window.AndroidBridge.generatePdf(JSON.stringify(containerPayload));
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
       // Header Banner
       doc.setFillColor(22, 101, 52);
@@ -1410,7 +1924,7 @@
       doc.text("ProdSuivi PRO V3 - Agro-Logistique Alimentaire Cameroun", 14, 23);
       doc.text("Suivi de Production & Objectifs d'Exportation Maritime", 14, 29);
 
-      if (container.closed) {
+      if (containerPayload.closed) {
         doc.setFillColor(185, 28, 28);
         doc.roundedRect(150, 10, 46, 12, 2, 2, "F");
         doc.setFontSize(9);
@@ -1436,22 +1950,24 @@
       doc.setFont("helvetica", "normal");
       doc.text("Nom du Conteneur :", 14, 53);
       doc.setFont("helvetica", "bold");
-      doc.text(`${container.name}`, 50, 53);
+      doc.text(`${nomConteneur}`, 50, 53);
 
       doc.setFont("helvetica", "normal");
       doc.text("Producteur / Resp. :", 14, 59);
       doc.setFont("helvetica", "bold");
-      doc.text(`${container.producerName || currentAuthUser?.name || 'AUDRIAN Ronis'} (${container.producerPhone || currentAuthUser?.phone || '670053957'})`, 50, 59);
+      const respName = containerPayload.producerName;
+      const respPhone = containerPayload.producerPhone;
+      doc.text(`${respName}${respPhone ? ' (' + respPhone + ')' : ''}`, 50, 59);
 
       doc.setFont("helvetica", "normal");
       doc.text("Tonnage Objectif Global :", 110, 53);
       doc.setFont("helvetica", "bold");
-      doc.text(`${totalObjKg.toFixed(1)} Kg (${totalObjTonnes.toFixed(3)} T)`, 152, 53);
+      doc.text(`${totalObjKg.toFixed(1)} Kg (${tonnageObjectif.toFixed(3)} T)`, 152, 53);
 
       doc.setFont("helvetica", "normal");
       doc.text("Tonnage Réalisé :", 110, 59);
       doc.setFont("helvetica", "bold");
-      doc.text(`${totalKg.toFixed(1)} Kg (${totalTonnes.toFixed(3)} T)`, 152, 59);
+      doc.text(`${totalKg.toFixed(1)} Kg (${tonnageRealise.toFixed(3)} T)`, 152, 59);
 
       doc.setFillColor(240, 253, 244);
       doc.setDrawColor(187, 247, 208);
@@ -1462,10 +1978,12 @@
       doc.setTextColor(22, 101, 52);
       doc.text(`TOTAL OBJECTIF: ${totalObjKg.toFixed(0)} Kg   |   TOTAL RÉALISÉ: ${totalKg.toFixed(1)} Kg   |   TAUX: ${fillRate.toFixed(1)}%   |   CARTONS: ${totalCartons.toFixed(1)}`, 18, 75);
 
+      const rowsToRender = tableRows.length > 0 ? tableRows : [["-", "Aucun produit dans ce conteneur", "-", "0 Kg", "0 Kg", "0 Kg", "0 ctn", "-"]];
+
       doc.autoTable({
         startY: 85,
         head: [["#", "Produit", "Poids Carton", "Objectif (Kg)", "Réalisé (Kg)", "Écart", "Est. Cartons", "Statut"]],
-        body: tableRows,
+        body: rowsToRender,
         foot: [
           ["", "TOTAUX CONTENEUR", "", `${totalObjKg.toFixed(1)} Kg`, `${totalKg.toFixed(1)} Kg`, `${(totalKg - totalObjKg) >= 0 ? '+' : ''}${(totalKg - totalObjKg).toFixed(1)} Kg`, `${totalCartons.toFixed(1)} Ctn`, `${fillRate.toFixed(1)}%`]
         ],
@@ -1491,7 +2009,7 @@
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "italic");
         doc.setTextColor(100, 116, 139);
-        doc.text(`Document certifié avec concordance exacte des pesées (${container.products.length} éléments). Mention: ProdSuivi PRO V3`, 14, finalY);
+        doc.text(`Document certifié avec concordance exacte des pesées (${tableRows.length} éléments). Mention: ProdSuivi PRO V3`, 14, finalY);
 
         doc.setDrawColor(203, 213, 225);
         doc.roundedRect(14, finalY + 5, 80, 18, 1, 1, "D");
@@ -1501,8 +2019,11 @@
         doc.text("Cachet Phyto-Sanitaire Port de Douala", 120, finalY + 10);
       }
 
-      openPdfPreviewModal_V3(doc, container, totalKg, totalObjKg, totalCartons, fillRate);
+      openPdfPreviewModal_V3(doc, containerPayload, totalKg, totalObjKg, totalCartons, fillRate);
     }
+
+    window.generatePDF = generatePDF;
+    window.exportRapportPDF = exportRapportPDF;
 
     function openPdfPreviewModal_V3(doc, container, totalKg, totalObjKg, totalCartons, fillRate) {
       const filename = `Rapport_Conteneur_V3_${container.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
@@ -1598,20 +2119,24 @@
           <h3 class="font-extrabold text-base text-slate-900">Nouveau Conteneur</h3>
           <button onclick="closeModal()" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
-        <form onsubmit="handleCreateContainer(event)" class="p-5 space-y-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Conteneur *</label>
-            <input type="text" id="new-container-name" required placeholder="Ex: Conteneur Mr Sango" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs" />
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Client / Destinataire</label>
-            <input type="text" id="new-container-client" placeholder="Ex: Sango Import & Export" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs" />
-          </div>
-          <div class="flex items-center space-x-2 pt-2">
-            <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-xs">Annuler</button>
-            <button type="submit" class="w-1/2 bg-agro-800 text-white font-bold py-3 rounded-xl text-xs shadow-md">Créer</button>
-          </div>
-        </form>
+        <KeyboardAvoidingView behavior="height" style="flex:1; width:100%;">
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle="flexGrow:1, paddingBottom:150" class="keyboard-scroll-view" style="flex-grow:1; padding-bottom:150px; width:100%; max-height:75vh; overflow-y:auto;">
+            <form onsubmit="handleCreateContainer(event)" class="p-5 space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Conteneur *</label>
+                <input type="text" id="new-container-name" required placeholder="Ex: Conteneur Mr Sango" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Client / Destinataire</label>
+                <input type="text" id="new-container-client" placeholder="Ex: Sango Import & Export" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs" />
+              </div>
+              <div class="flex items-center space-x-2 pt-2">
+                <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-xs">Annuler</button>
+                <button type="submit" class="w-1/2 bg-agro-800 text-white font-bold py-3 rounded-xl text-xs shadow-md">Créer</button>
+              </div>
+            </form>
+          </ScrollView>
+        </KeyboardAvoidingView>
       `;
 
       backdrop.classList.remove("hidden");
@@ -1636,8 +2161,8 @@
         createdAt: dateStr,
         closed: false,
         locked: false,
-        producerPhone: currentAuthUser?.phone || "670053957",
-        producerName: currentAuthUser?.name || "AUDRIAN Ronis",
+        producerPhone: currentAuthUser?.phone || "",
+        producerName: currentAuthUser?.name || "Producteur",
         products: []
       });
 
@@ -1676,58 +2201,63 @@
           <button onclick="closeModal()" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
 
-        <form onsubmit="handleSaveProduct_V3(event, '${containerId}', '${productId || ''}')" class="p-5 space-y-3.5 overflow-y-auto max-h-[75vh]">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Produit (Ex: Ndolé, Bitter Leaves) *</label>
-            <input type="text" id="prod-v3-name" required value="${isEdit ? escapeHtml(product.name) : ''}" placeholder="Ex: Ndolé, Bitter Leaves, Bobolo..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 font-semibold" />
-          </div>
+        <KeyboardAvoidingView behavior="height" style="flex:1; width:100%;">
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle="flexGrow:1, paddingBottom:150" class="keyboard-scroll-view" style="flex-grow:1; padding-bottom:150px; width:100%; max-height:75vh; overflow-y:auto;">
+            <form onsubmit="handleSaveProduct_V3(event, '${containerId}', '${productId || ''}')" class="p-5 space-y-3.5">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Produit (Ex: Ndolé, Bitter Leaves) *</label>
+                <input type="text" id="prod-v3-name" required value="${isEdit ? escapeHtml(product.name) : ''}" placeholder="Ex: Ndolé, Bitter Leaves, Bobolo..." onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 font-semibold" />
+              </div>
 
-          <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200 space-y-1">
-            <label class="block text-xs font-extrabold text-emerald-900 uppercase">
-              🎯 Tonnage de Départ / Objectif (Kg) *
-            </label>
-            <div class="text-[11px] text-emerald-700 font-medium">Quantité totale commandée par le client pour ce produit</div>
-            <input 
-              type="number" 
-              id="prod-v3-objectif" 
-              step="0.1" 
-              required
-              value="${isEdit ? (product.objectifKg || product.mass || 1500) : 1500}"
-              placeholder="Ex: 1500.0" 
-              class="w-full bg-white border border-emerald-300 rounded-xl p-2.5 text-xs text-slate-900 font-black focus:ring-2 focus:ring-emerald-500 mt-1" 
-            />
-          </div>
+              <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200 space-y-1">
+                <label class="block text-xs font-extrabold text-emerald-900 uppercase">
+                  🎯 Tonnage de Départ / Objectif (Kg) *
+                </label>
+                <div class="text-[11px] text-emerald-700 font-medium">Quantité totale commandée par le client pour ce produit</div>
+                <input 
+                  type="number" 
+                  id="prod-v3-objectif" 
+                  step="0.1" 
+                  required
+                  value="${isEdit ? (product.objectifKg || product.mass || 1500) : 1500}"
+                  placeholder="Ex: 1500.0" 
+                  onfocus="ensureInputVisible(this)"
+                  class="w-full bg-white border border-emerald-300 rounded-xl p-2.5 text-xs text-slate-900 font-black focus:ring-2 focus:ring-emerald-500 mt-1" 
+                />
+              </div>
 
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Poids pièce (Kg) *</label>
-              <input type="number" id="prod-v3-pc-weight" step="0.1" required value="${isEdit ? product.pcWeight : 1.0}" oninput="calcCartonWeightV3()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Qté / ctn *</label>
-              <input type="number" id="prod-v3-pcs" required value="${isEdit ? product.pcsPerCarton : 15}" oninput="calcCartonWeightV3()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Poids carton (Kg) *</label>
-              <input type="number" id="prod-v3-carton-weight" step="0.1" required value="${isEdit ? product.cartonWeight : 15.0}" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-agro-800" />
-            </div>
-          </div>
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Poids pièce (Kg) *</label>
+                  <input type="number" id="prod-v3-pc-weight" step="0.1" required value="${isEdit ? product.pcWeight : 1.0}" oninput="calcCartonWeightV3()" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Qté / ctn *</label>
+                  <input type="number" id="prod-v3-pcs" required value="${isEdit ? product.pcsPerCarton : 15}" oninput="calcCartonWeightV3()" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Poids carton (Kg) *</label>
+                  <input type="number" id="prod-v3-carton-weight" step="0.1" required value="${isEdit ? product.cartonWeight : 15.0}" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-agro-800" />
+                </div>
+              </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Masse actuelle / Réalisée (Kg) *</label>
-            <input type="number" id="prod-v3-mass" step="0.1" required value="${isEdit ? product.mass : 0}" placeholder="ex: 1540.0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold" />
-          </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Masse actuelle / Réalisée (Kg) *</label>
+                <input type="number" id="prod-v3-mass" step="0.1" required value="${isEdit ? product.mass : 0}" placeholder="ex: 1540.0" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold" />
+              </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Description (Facultatif)</label>
-            <input type="text" id="prod-v3-desc" value="${isEdit ? escapeHtml(product.desc || '') : ''}" placeholder="Ex: Feuilles fraîches sous vide" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs" />
-          </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Description (Facultatif)</label>
+                <input type="text" id="prod-v3-desc" value="${isEdit ? escapeHtml(product.desc || '') : ''}" placeholder="Ex: Feuilles fraîches sous vide" onfocus="ensureInputVisible(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs" />
+              </div>
 
-          <div class="flex items-center space-x-2 pt-3">
-            <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-xs">Annuler</button>
-            <button type="submit" class="w-1/2 bg-agro-800 text-white font-bold py-3 rounded-xl text-xs shadow-md">Enregistrer</button>
-          </div>
-        </form>
+              <div class="flex items-center space-x-2 pt-3">
+                <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-xs">Annuler</button>
+                <button type="submit" class="w-1/2 bg-agro-800 text-white font-bold py-3 rounded-xl text-xs shadow-md">Enregistrer</button>
+              </div>
+            </form>
+          </ScrollView>
+        </KeyboardAvoidingView>
       `;
 
       backdrop.classList.remove("hidden");
