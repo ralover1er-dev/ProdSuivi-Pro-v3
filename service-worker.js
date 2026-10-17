@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prodsuivi-pro-v3-offline-v1';
+const CACHE_NAME = 'prodSuivi-pro-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -16,34 +16,30 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Mise en cache locale des ressources hors-ligne');
+      console.log('[Service Worker] Mise en cache locale des ressources hors-ligne v5');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
 });
 
-// Activate: clean up old caches and take control immediately
+// Activate: clean up old caches (supprime tous les anciens caches qui ne sont pas prodSuivi-pro-v5)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((name) => {
-            if (name !== CACHE_NAME) {
-              console.log('[Service Worker] Suppression de l\'ancien cache', name);
-              return caches.delete(name);
-            }
-          })
-        );
-      }),
-      self.clients.claim()
-    ])
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
+            console.log('[Service Worker] Suppression de l\'ancien cache (non-v5)', name);
+            return caches.delete(name);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
 // Fetch: Cache-First strategy to ensure 100% offline-first reliability (e.g. at Douala Port with 0 network)
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
@@ -63,7 +59,6 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // If network fails and request is for an HTML navigation, serve cached index.html
           if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
             return caches.match('./index.html');
           }
