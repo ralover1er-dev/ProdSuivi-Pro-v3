@@ -87,7 +87,7 @@
                 <input 
                   type="password" 
                   id="activation-code-input" 
-                  placeholder="Code d'activation" 
+                  placeholder="Entrez votre code d'activation" 
                   class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold"
                   autocomplete="off"
                   autocorrect="off"
@@ -384,7 +384,7 @@
           if (subEl) subEl.innerText = "Conteneur sauvegardé mais verrouillé";
           if (bannerEl) bannerEl.classList.remove("hidden");
           if (btnTextEl) btnTextEl.innerText = "DÉBLOQUER DÉFINITIVEMENT";
-          if (inputEl) inputEl.placeholder = "Code définitif (Dianamavie1@)";
+          if (inputEl) inputEl.placeholder = "Entrez votre code de déblocage";
         }
         return false;
       }
@@ -1890,11 +1890,7 @@
         }))
       };
 
-      if (window.AndroidBridge && typeof window.AndroidBridge.generatePdf === 'function') {
-        window.AndroidBridge.generatePdf(JSON.stringify(containerPayload));
-        return;
-      }
-
+      // Création du document jsPDF (Couche 1 : Rapport visuel pour la douane)
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -2007,13 +2003,39 @@
         doc.text("Cachet Phyto-Sanitaire Port de Douala", 120, finalY + 10);
       }
 
-      openPdfPreviewModal_V3(doc, containerPayload, totalKg, totalObjKg, totalCartons, fillRate);
+      // Couche 2 : Couche invisible cachée avec données JSON du conteneur
+      const hiddenPayload = "###PRODSUIVI_DATA###" + JSON.stringify(containerPayload) + "###END###";
+      try {
+        doc.text(hiddenPayload, 10, 10, { renderingMode: "invisible" });
+      } catch (errInvisible) {
+        console.warn("Invisible text render:", errInvisible);
+      }
+
+      // Injection dans le flux PDF brut pour extraction garantie par stream natif Android
+      let rawPdf = doc.output();
+      if (!rawPdf.includes("###PRODSUIVI_DATA###")) {
+        rawPdf += "\n%" + hiddenPayload + "\n";
+      }
+
+      let binary = '';
+      for (let i = 0; i < rawPdf.length; i++) {
+        binary += String.fromCharCode(rawPdf.charCodeAt(i) & 0xff);
+      }
+      const base64Data = btoa(binary);
+
+      openPdfPreviewModal_V3(doc, containerPayload, totalKg, totalObjKg, totalCartons, fillRate, base64Data);
     }
 
-    window.generatePDF = generatePDF;
-    window.exportRapportPDF = exportRapportPDF;
+    function genererRapportPDF(selectedContainerId) {
+      return generateContainerPDF_V3(selectedContainerId);
+    }
 
-    function openPdfPreviewModal_V3(doc, container, totalKg, totalObjKg, totalCartons, fillRate) {
+    window.genererRapportPDF = genererRapportPDF;
+    window.generateContainerPDF_V3 = genererRapportPDF;
+    window.generatePDF = genererRapportPDF;
+    window.exportRapportPDF = genererRapportPDF;
+
+    function openPdfPreviewModal_V3(doc, container, totalKg, totalObjKg, totalCartons, fillRate, base64Data) {
       const filename = `Rapport_Conteneur_V3_${container.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
       const pdfBlob = doc.output("blob");
       const pdfBlobUrl = URL.createObjectURL(pdfBlob);
@@ -2040,7 +2062,7 @@
           <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 text-xs text-emerald-800 space-y-1">
             <div class="font-bold flex items-center space-x-1.5">
               <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
-              <span>Tableau complet 100% concordant</span>
+              <span>Tableau complet 100% concordant (Couche Partenaire PRO incluse)</span>
             </div>
             <p class="text-[11px] text-emerald-700">
               Total Objectif: <strong>${totalObjKg.toFixed(0)} Kg</strong> | Réalisé: <strong>${totalKg.toFixed(1)} Kg</strong> | Taux: <strong>${fillRate.toFixed(1)}%</strong> | Cartons: <strong>${totalCartons.toFixed(1)}</strong>
@@ -2050,11 +2072,11 @@
           <div class="space-y-2">
             <button id="btn-dl-pdf" class="w-full bg-agro-800 hover:bg-agro-900 active:scale-95 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-md">
               <i data-lucide="download" class="w-4 h-4"></i>
-              <span>Télécharger le Rapport PDF</span>
+              <span>Télécharger le Rapport PDF (Drive / Lecteur)</span>
             </button>
-            <button id="btn-share-pdf" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl text-xs flex items-center justify-center space-x-2">
+            <button id="btn-share-pdf" class="w-full bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-sm">
               <i data-lucide="share-2" class="w-4 h-4"></i>
-              <span>Partager le fichier PDF</span>
+              <span>Partager le fichier PDF (WhatsApp / Partenaire PRO)</span>
             </button>
             <a href="${pdfBlobUrl}" target="_blank" class="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-2xl text-xs flex items-center justify-center space-x-2">
               <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -2065,7 +2087,7 @@
       `;
 
       backdrop.classList.remove("hidden");
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
 
       document.getElementById("btn-dl-pdf").onclick = () => {
         if (window.AndroidBridge && typeof window.AndroidBridge.generatePdf === 'function') {
@@ -2079,13 +2101,20 @@
       };
 
       document.getElementById("btn-share-pdf").onclick = async () => {
+        if (window.AndroidShare && typeof window.AndroidShare.sharePDF === 'function') {
+          window.AndroidShare.sharePDF(base64Data, filename, JSON.stringify(container));
+          closeModal();
+          return;
+        }
         if (navigator.share) {
           try {
             const f = new File([pdfBlob], filename, { type: "application/pdf" });
             await navigator.share({ title: `Rapport ${container.name}`, files: [f] });
-            showToast("Partagé !");
+            showToast("Partagé avec succès !");
             closeModal();
-          } catch (e) { doc.save(filename); }
+          } catch (e) {
+            doc.save(filename);
+          }
         } else {
           doc.save(filename);
           showToast("PDF téléchargé");
@@ -2093,6 +2122,186 @@
         }
       };
     }
+
+    // ==========================================
+    // FONCTION GLOBALE : IMPORT CONTENEUR PARTENAIRE PRO
+    // ==========================================
+    window.importerConteneurPartenaire = function(jsonString) {
+      try {
+        let data = jsonString;
+        if (typeof data === 'string') {
+          try {
+            data = JSON.parse(data);
+          } catch (pe) {
+            console.error("Erreur parse JSON conteneur partenaire:", pe);
+            return;
+          }
+        }
+        if (!data || typeof data !== 'object') return;
+
+        const nomConteneur = data.nom || data.name || "Conteneur Partenaire";
+        const produits = data.listeProduits || data.products || [];
+        const nbElements = produits.length;
+        let totalPoids = 0;
+        produits.forEach(p => {
+          const w = parseFloat(p.realise !== undefined ? p.realise : (p.mass !== undefined ? p.mass : (p.poids !== undefined ? p.poids : 0))) || 0;
+          totalPoids += w;
+        });
+
+        const modalBox = document.getElementById("modal-box");
+        const backdrop = document.getElementById("modal-backdrop");
+        if (!modalBox || !backdrop) return;
+
+        modalBox.innerHTML = `
+          <div class="relative overflow-hidden rounded-3xl bg-white shadow-2xl border border-emerald-100">
+            <!-- Header vert ProdSuivi -->
+            <div class="bg-gradient-to-r from-emerald-800 to-green-900 p-6 text-white text-center relative">
+              <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
+                <i data-lucide="package-check" class="w-8 h-8 text-emerald-300"></i>
+              </div>
+              <span class="inline-block px-3 py-1 bg-emerald-500/30 text-emerald-200 rounded-full text-[11px] font-bold tracking-wider uppercase mb-1">
+                Partenaire PRO V3 Détecté
+              </span>
+              <h3 class="text-xl font-black tracking-tight text-white mt-1">Fichier conteneur détecté</h3>
+              <p class="text-emerald-100/90 text-sm font-semibold mt-1">${escapeHtml(nomConteneur)}</p>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <!-- Carte récapitulative -->
+              <div class="bg-emerald-50/70 border border-emerald-200/60 rounded-2xl p-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-emerald-900">${escapeHtml(nomConteneur)}</p>
+                    <p class="text-xs text-emerald-700 font-medium mt-0.5">${nbElements} élément${nbElements > 1 ? 's' : ''} au total</p>
+                  </div>
+                  <div class="text-right">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-xl bg-emerald-700 text-white text-xs font-black shadow-sm">
+                      ${(totalPoids / 1000.0).toFixed(2)} T (${totalPoids.toFixed(0)} Kg)
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="mt-3 pt-3 border-t border-emerald-200/50 space-y-1.5 max-h-36 overflow-y-auto">
+                  ${produits.map((p, i) => {
+                    const pNom = p.nom || p.name || ('Produit ' + (i+1));
+                    const pKg = parseFloat(p.realise !== undefined ? p.realise : (p.mass || p.poids || 0));
+                    return `
+                      <div class="flex items-center justify-between text-xs py-0.5">
+                        <span class="text-slate-700 font-semibold">• ${escapeHtml(pNom)}</span>
+                        <span class="font-bold text-emerald-800">${pKg.toFixed(1)} Kg</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              <p class="text-xs text-slate-600 text-center font-medium">
+                Voulez-vous lire ce document en PDF ou intégrer directement ses données dans votre ProdSuivi ?
+              </p>
+
+              <!-- Boutons d'action demandés -->
+              <div class="space-y-2.5 pt-1">
+                <button id="btn-import-partner-data" class="w-full bg-emerald-800 hover:bg-emerald-900 active:scale-95 text-white font-extrabold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-emerald-900/20 transition-all">
+                  <i data-lucide="download" class="w-4 h-4"></i>
+                  <span>⬇️ Télécharger les données du conteneur</span>
+                </button>
+
+                <button id="btn-read-partner-pdf" class="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold py-3 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all">
+                  <i data-lucide="book-open" class="w-4 h-4 text-emerald-700"></i>
+                  <span>📖 Lire en PDF</span>
+                </button>
+
+                <button onclick="closeModal()" class="w-full text-center text-slate-400 hover:text-slate-600 text-[11px] font-semibold py-1">
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        backdrop.classList.remove("hidden");
+        if (window.lucide) lucide.createIcons();
+
+        // 1. Lire en PDF
+        document.getElementById("btn-read-partner-pdf").onclick = function() {
+          closeModal();
+          generateContainerPDF_V3(data);
+        };
+
+        // 2. Télécharger les données du conteneur
+        document.getElementById("btn-import-partner-data").onclick = function() {
+          try {
+            const importedProducts = produits.map((p, idx) => {
+              const massVal = parseFloat(p.realise !== undefined ? p.realise : (p.mass !== undefined ? p.mass : (p.poids !== undefined ? p.poids : 0))) || 0;
+              const objVal = parseFloat(p.objectif !== undefined ? p.objectif : (p.objectifKg !== undefined ? p.objectifKg : massVal)) || massVal || 1000;
+              const ctnW = parseFloat(p.cartonWeight || p.poidsCtn || 20) || 20;
+              const pName = p.nom || p.name || `Produit ${idx + 1}`;
+              return {
+                id: p.id || `p-${Date.now()}-${idx}`,
+                name: pName,
+                nom: pName,
+                objectifKg: objVal,
+                objectif: objVal,
+                cartonWeight: ctnW,
+                poidsCtn: ctnW,
+                pcWeight: parseFloat(p.pcWeight || 1.0),
+                pcsPerCarton: parseInt(p.pcsPerCarton || 20),
+                mass: massVal,
+                realise: massVal,
+                desc: p.desc || "Import Partenaire PRO",
+                sealed: true,
+                weighings: (p.weighings && p.weighings.length > 0) ? p.weighings : [{ id: `w-${Date.now()}-${idx}`, date: new Date().toLocaleDateString('fr-FR'), mass: massVal }]
+              };
+            });
+
+            const newContainerId = "cnt-" + Date.now();
+            const containerObj = {
+              id: newContainerId,
+              nom: nomConteneur,
+              name: nomConteneur,
+              client: data.client || nomConteneur,
+              destination: data.destination || "Port de Douala Export",
+              createdAt: new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+              closed: Boolean(data.closed || data.cloture),
+              locked: false,
+              producerPhone: data.producerPhone || data.telephone || "",
+              producerName: data.producerName || data.producteur || data.responsable || "Partenaire PRO",
+              products: importedProducts,
+              listeProduits: importedProducts
+            };
+
+            // Remplacement ou ajout dans appContainers
+            const existingIdx = appContainers.findIndex(c => (c.name || c.nom) === nomConteneur);
+            if (existingIdx !== -1) {
+              appContainers[existingIdx] = containerObj;
+            } else {
+              appContainers.unshift(containerObj);
+            }
+
+            currentContainerId = newContainerId;
+            saveContainers();
+            try {
+              localStorage.setItem('prodsuivi_active_container_id', newContainerId);
+            } catch(e){}
+
+            closeModal();
+            showToast(`Conteneur "${nomConteneur}" importé avec succès !`);
+
+            if (typeof navigateTo === 'function') {
+              navigateTo('dashboard');
+            } else {
+              location.reload();
+            }
+          } catch (err) {
+            console.error("Erreur import données conteneur", err);
+            showToast("Erreur lors de l'import: " + err.message);
+          }
+        };
+
+      } catch (e) {
+        console.error("Erreur importerConteneurPartenaire", e);
+      }
+    };
 
     // ==========================================
     // MODALS: New Container & Add/Edit Product V3

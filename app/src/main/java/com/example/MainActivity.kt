@@ -51,10 +51,12 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     private var webView: WebView? = null
     var lastContainerJson: String? = null
+    var pendingImportJson: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        handlePdfIntent(intent)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -429,6 +431,16 @@ class MainActivity : ComponentActivity() {
             val displayName = "Rapport_${safeContName}_$timestamp.pdf"
             var pdfUri: Uri? = null
 
+            val byteStream = java.io.ByteArrayOutputStream()
+            document.writeTo(byteStream)
+            val rawPdfBytes = byteStream.toByteArray()
+            val finalPdfBytes = if (!jsonToParse.isNullOrBlank()) {
+                val tag = "\n%###PRODSUIVI_DATA###$jsonToParse###END###\n"
+                rawPdfBytes + tag.toByteArray(Charsets.UTF_8)
+            } else {
+                rawPdfBytes
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
@@ -438,7 +450,7 @@ class MainActivity : ComponentActivity() {
                 pdfUri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
                 if (pdfUri != null) {
                     contentResolver.openOutputStream(pdfUri)?.use { outputStream ->
-                        document.writeTo(outputStream)
+                        outputStream.write(finalPdfBytes)
                     }
                 }
             } else {
@@ -446,7 +458,7 @@ class MainActivity : ComponentActivity() {
                 if (!downloadsDir.exists()) downloadsDir.mkdirs()
                 val file = File(downloadsDir, displayName)
                 FileOutputStream(file).use { outputStream ->
-                    document.writeTo(outputStream)
+                    outputStream.write(finalPdfBytes)
                 }
                 pdfUri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileprovider", file)
             }
@@ -473,6 +485,98 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, "Erreur génération PDF : ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         } finally {
             document.close()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handlePdfIntent(intent)
+    }
+
+    fun onWebViewPageFinished(view: WebView?) {
+        deliverPendingImport()
+    }
+
+    private fun deliverPendingImport() {
+        val json = pendingImportJson ?: return
+        webView?.let { wv ->
+            runOnUiThread {
+                val escaped = JSONObject.quote(json)
+                wv.evaluateJavascript("if (typeof window.importerConteneurPartenaire === 'function') { window.importerConteneurPartenaire($escaped); }", null)
+                pendingImportJson = null
+            }
+        }
+    }
+
+    private fun handlePdfIntent(intent: Intent?) {
+        if (intent == null) return
+        val action = intent.action
+        val uri = intent.data
+
+        if (Intent.ACTION_VIEW == action && uri != null) {
+            try {
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val bytes = inputStream.readBytes()
+                    val text = String(bytes, Charsets.ISO_8859_1)
+                    val startTag = "###PRODSUIVI_DATA###"
+                    val endTag = "###END###"
+                    val startIdx = text.indexOf(startTag)
+                    if (startIdx != -1) {
+                        val endIdx = text.indexOf(endTag, startIdx + startTag.length)
+                        if (endIdx != -1) {
+                            val rawJson = text.substring(startIdx + startTag.length, endIdx)
+                            val utf8Json = String(rawJson.toByteArray(Charsets.ISO_8859_1), Charsets.UTF_8)
+                            pendingImportJson = utf8Json
+                            deliverPendingImport()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Erreur lecture PDF importé", e)
+            }
+        }
+    }
+
+    fun saveAndSharePdf(base64Data: String?, fileName: String?, containerJson: String?) {
+        try {
+            val name = if (!fileName.isNullOrBlank()) fileName else "Rapport_ProdSuivi_${System.currentTimeMillis()}.pdf"
+            val cacheFile = File(cacheDir, name)
+
+            if (!base64Data.isNullOrBlank()) {
+                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                val textContent = String(decodedBytes, Charsets.ISO_8859_1)
+                val finalBytes = if (!textContent.contains("###PRODSUIVI_DATA###") && !containerJson.isNullOrBlank()) {
+                    val hiddenPayload = "\n%###PRODSUIVI_DATA###$containerJson###END###\n"
+                    decodedBytes + hiddenPayload.toByteArray(Charsets.UTF_8)
+                } else {
+                    decodedBytes
+                }
+                FileOutputStream(cacheFile).use { it.write(finalBytes) }
+            } else {
+                generatePdf(containerJson)
+                return
+            }
+
+            val uri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileprovider", cacheFile)
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(shareIntent, "Partager le Rapport PDF"))
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Erreur saveAndSharePdf", e)
+            Toast.makeText(this, "Erreur partage PDF: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+class AndroidShare(private val activity: MainActivity) {
+    @JavascriptInterface
+    fun sharePDF(base64Data: String?, fileName: String?, containerJson: String?) {
+        activity.runOnUiThread {
+            activity.saveAndSharePdf(base64Data, fileName, containerJson)
         }
     }
 }
@@ -545,11 +649,17 @@ fun WebAppScreen(
                     cacheMode = WebSettings.LOAD_DEFAULT
                 }
 
-                // Bridge to trigger native PDF generation from JS
+                // Bridges for native features and partner PDF sharing
                 addJavascriptInterface(AndroidBridge(activity), "AndroidBridge")
+                addJavascriptInterface(AndroidShare(activity), "AndroidShare")
 
                 webChromeClient = WebChromeClient()
                 webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        activity.onWebViewPageFinished(view)
+                    }
+
                     override fun onRenderProcessGone(
                         view: WebView?,
                         detail: RenderProcessGoneDetail?
